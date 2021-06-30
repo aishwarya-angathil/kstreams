@@ -20,6 +20,8 @@ import io.confluent.kafka.serializers.KafkaAvroSerializer;
 import io.confluent.kafka.streams.serdes.avro.GenericAvroSerde;
 import io.confluent.kafka.streams.serdes.avro.SpecificAvroSerde;
 
+import java.io.FileInputStream;
+import java.io.InputStream;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Locale;
@@ -27,9 +29,33 @@ import java.util.Properties;
 import java.util.concurrent.CountDownLatch;
 
 public class KStreamApp {
-
+	static Properties allConfig = new Properties();
     public static void main(String[] args) throws Exception {
-        Properties props = new Properties();
+    	Properties props = new Properties();
+    	
+    	String inputTopic=null;
+    	String outputTopic = null;
+    	String exceptionTopic = null;
+        
+        if(args.length>0) {
+        	InputStream inputConf = new FileInputStream(args[0]);
+        	allConfig.load(inputConf);
+        }
+        
+        if(!allConfig.isEmpty()) {
+        	props.put(StreamsConfig.APPLICATION_ID_CONFIG, allConfig.getProperty("app"));
+            props.put(StreamsConfig.BOOTSTRAP_SERVERS_CONFIG, allConfig.getProperty("bootstrap")); // confluent Bootstrap Servers
+            props.put(StreamsConfig.DEFAULT_KEY_SERDE_CLASS_CONFIG, Serdes.String().getClass());
+            props.put(StreamsConfig.DEFAULT_VALUE_SERDE_CLASS_CONFIG, SpecificAvroSerde.class); 
+            props.put("schema.registry.url", allConfig.getProperty("schemaregistry"));// Schema Registry URL
+            props.put(SaslConfigs.SASL_MECHANISM, allConfig.getProperty("mechanism"));
+            props.put(StreamsConfig.SECURITY_PROTOCOL_CONFIG,allConfig.getProperty("protocol"));
+            props.put(SaslConfigs.SASL_JAAS_CONFIG, allConfig.getProperty("jaasmodule")+" required username=\""+allConfig.getProperty("jaasuser")+"\" password=\""+allConfig.getProperty("jaaspwd")+"\";");
+             inputTopic=allConfig.getProperty("inputtopic");
+        	 outputTopic = allConfig.getProperty("outputtopic");
+        	 exceptionTopic = allConfig.getProperty("exceptiontopic");
+
+        }else {
         props.put(StreamsConfig.APPLICATION_ID_CONFIG, "streams-t0618");
         props.put(StreamsConfig.BOOTSTRAP_SERVERS_CONFIG, "kafka:9071"); // confluent Bootstrap Servers
         props.put(StreamsConfig.DEFAULT_KEY_SERDE_CLASS_CONFIG, Serdes.String().getClass());
@@ -38,10 +64,13 @@ public class KStreamApp {
         props.put(SaslConfigs.SASL_MECHANISM, "PLAIN");
         props.put(StreamsConfig.SECURITY_PROTOCOL_CONFIG,"SASL_PLAINTEXT");
         props.put(SaslConfigs.SASL_JAAS_CONFIG, "org.apache.kafka.common.security.plain.PlainLoginModule required username=\"test\" password=\"test123\";");
-
+        inputTopic="customer";
+   	 outputTopic = "outputcustomer";
+   	 exceptionTopic = "exceptiontopic";
+        }
         final StreamsBuilder builder = new StreamsBuilder();
 
-        KStream<String, Customer> source = builder.stream("customer");
+        KStream<String, Customer> source = builder.stream(inputTopic);
         
         @SuppressWarnings("unchecked") // can we check type of datatype for al fields?
 		KStream<String, Customer>[] branch = source
@@ -49,7 +78,7 @@ public class KStreamApp {
                          (key, appearance) -> true);
         
 
-       branch[1].to("exceptiontopic");
+       branch[1].to(exceptionTopic);
         
         
         
@@ -59,7 +88,7 @@ public class KStreamApp {
     
         dest.print(Printed.toSysOut());
         
-        dest.to("outputcustomer"); // do we need to uncomment for writing data to output tiopic?
+        dest.to(outputTopic); // do we need to uncomment for writing data to output tiopic?
 
 
 
@@ -107,6 +136,9 @@ public class KStreamApp {
         SpecificAvroSerde<UpdatedCustomer> updatedAvroSerde = new SpecificAvroSerde<>();
 
         final HashMap<String, String> serdeConfig = new HashMap<>();
+        if(!allConfig.isEmpty() && allConfig.containsKey("schemaregistry"))
+        	serdeConfig.put("schema.registry.url",allConfig.getProperty("schemaregistry"));
+        else
         serdeConfig.put("schema.registry.url","http://localhost:8081");
 
         updatedAvroSerde.configure(serdeConfig, false);
@@ -117,6 +149,9 @@ public class KStreamApp {
         SpecificAvroSerde<InputCustomer> inputAvroSerde = new SpecificAvroSerde<>();
 
         final HashMap<String, String> serdeConfig = new HashMap<>();
+        if(!allConfig.isEmpty() && allConfig.containsKey("schemaregistry"))
+        	serdeConfig.put("schema.registry.url",allConfig.getProperty("schemaregistry"));
+        else
         serdeConfig.put("schema.registry.url","http://localhost:8081");
 
         inputAvroSerde.configure(serdeConfig, false);
