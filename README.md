@@ -1,6 +1,6 @@
 # kstreams
 
-COmmand to run cod 
+Command to run code
 
 In eclipse :
 
