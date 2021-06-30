@@ -1,0 +1,12 @@
+{
+   "type" : "record",
+   "namespace" : "com.training",
+   "name" : "UpdatedCustomer",
+   "fields" : [
+      { "name" : "FirstName" , "type" : "string" },
+	  { "name" : "LastName" , "type" : "string" },
+      { "name" : "Age" , "type" : "int" },
+	  { "name" : "City" , "type" : "string" }
+	  
+   ]
+}

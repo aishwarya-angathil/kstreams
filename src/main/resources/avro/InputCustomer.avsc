@@ -1,0 +1,15 @@
+{
+   "type" : "record",
+   "namespace" : "com.training",
+   "name" : "InputCustomer",
+   "fields" : [
+      { "name" : "id" , "type" : ["null", "long"] },
+      { "name" : "firstName" , "type" : ["null", "string"] },
+	  { "name" : "lastName" , "type" : ["null", "string"] },
+	  { "name" : "email" , "type" : ["null", "string"] },
+	  { "name" : "address" , "type" : ["null", "string"] },
+	  { "name" : "level" , "type" : ["null", "string"] }
+	  
+   ]
+}
+
