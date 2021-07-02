@@ -287,6 +287,7 @@
                     <manifest>  
                     <addClasspath>true</addClasspath>
                         <mainClass>confluentkafka.kstreams.KStreamApp</mainClass>  
+                        <!-- <mainClass>confluentkafka.kstreams.KafkaAvroProducer</mainClass> -->
                     </manifest>  
                 </archive>  
             </configuration> 
@@ -298,6 +299,7 @@
         <archive>
           <manifest>
             <mainClass>confluentkafka.kstreams.KStreamApp</mainClass>
+       <!-- <mainClass>confluentkafka.kstreams.KafkaAvroProducer</mainClass> -->
           </manifest>
         </archive>
         <descriptorRefs>

@@ -1,6 +1,5 @@
 package confluentkafka.kstreams;
 
-import org.apache.avro.generic.GenericRecord;
 import org.apache.kafka.common.config.SaslConfigs;
 import org.apache.kafka.common.serialization.Serdes;
 import org.apache.kafka.streams.KafkaStreams;
@@ -15,9 +14,6 @@ import com.training.Customer;
 import com.training.InputCustomer;
 import com.training.OutputCustomer;
 import com.training.UpdatedCustomer;
-
-import io.confluent.kafka.serializers.KafkaAvroSerializer;
-import io.confluent.kafka.streams.serdes.avro.GenericAvroSerde;
 import io.confluent.kafka.streams.serdes.avro.SpecificAvroSerde;
 
 import java.io.FileInputStream;
@@ -74,8 +70,8 @@ public class KStreamApp {
         
         @SuppressWarnings("unchecked") // can we check type of datatype for al fields?
 		KStream<String, Customer>[] branch = source
-        		 .branch((key, appearance) -> (!appearance.getName().isEmpty()),
-                         (key, appearance) -> true);
+        		 .branch((key, appearance) -> (appearance.getName().equalsIgnoreCase("ABCD")),
+                         (key, appearance) -> (!appearance.getName().equalsIgnoreCase("ABCD")));
         
 
        branch[1].to(exceptionTopic);
