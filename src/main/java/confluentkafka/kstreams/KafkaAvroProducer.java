@@ -87,11 +87,11 @@ public class KafkaAvroProducer {
 	        Customer dataInvalid = Customer.newBuilder().setName("EFGH").setAge(30).setCity("Mumbai").build();
 	        		//String val = "{'name':{'string':'ABCD'},'age':{'long':20},'city':{'string':'New DELHI'}}";
 	     // construct kafka producer.
-	        KafkaProducer producer = new KafkaProducer(properties);
+	        KafkaProducer<String,Customer> producer = new KafkaProducer<String,Customer>(properties);
 
 	      
-	        ProducerRecord<Object, Object> record = new ProducerRecord<>(outputTopic, null, data);
-	        ProducerRecord<Object, Object> recordInvalid = new ProducerRecord<>(outputTopic, null, dataInvalid);
+	        ProducerRecord<String,Customer> record = new ProducerRecord<>(outputTopic, data);
+	        ProducerRecord<String,Customer> recordInvalid = new ProducerRecord<>(outputTopic, dataInvalid);
 	        
 	        try {
 	        	while(true) {
