@@ -3,9 +3,9 @@
    "namespace" : "com.training", // where is com.training
    "name" : "Customer",
    "fields" : [
+      { "name" : "Id" , "type" : "int" },
       { "name" : "Name" , "type" : "string" },
       { "name" : "Age" , "type" : "int" },
 	  { "name" : "City" , "type" : "string" }
-	  
    ]
 }

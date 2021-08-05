@@ -3,10 +3,13 @@
    "namespace" : "com.training",
    "name" : "UpdatedCustomer",
    "fields" : [
+      { "name" : "Id" , "type" : "int" },
       { "name" : "FirstName" , "type" : "string" },
 	  { "name" : "LastName" , "type" : "string" },
       { "name" : "Age" , "type" : "int" },
-	  { "name" : "City" , "type" : "string" }
+	  { "name" : "City" , "type" : "string" },
+	  { "name" : "Email" , "type" : "string" },
+	  { "name" : "Address" , "type" : "string" }
 	  
    ]
 }

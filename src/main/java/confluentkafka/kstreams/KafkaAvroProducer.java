@@ -12,6 +12,7 @@ import org.apache.avro.generic.GenericRecord;
 import org.apache.kafka.clients.producer.Callback;
 import org.apache.kafka.clients.producer.KafkaProducer;
 import org.apache.kafka.clients.producer.Producer;
+import org.apache.kafka.clients.producer.ProducerConfig;
 import org.apache.kafka.clients.producer.ProducerRecord;
 import org.apache.kafka.clients.producer.RecordMetadata;
 import org.apache.kafka.common.config.SaslConfigs;
@@ -31,17 +32,21 @@ public class KafkaAvroProducer {
 	        Properties allConfig = new Properties();
 	        // normal producer
 	       
-	        properties.setProperty("acks", "all");
-	        properties.setProperty("retries", "10");
+	        properties.put("acks", "all");
+	        properties.put("retries", "10");
 	        // avro part
-	        properties.setProperty("key.serializer", StringSerializer.class.getName());
-	        properties.setProperty("value.serializer", KafkaAvroSerializer.class.getName());
+	       // properties.setProperty("key.serializer", StringSerializer.class.getName());
+	       // properties.setProperty("value.serializer", KafkaAvroSerializer.class.getName());
+	        properties.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG,
+	                org.apache.kafka.common.serialization.StringSerializer.class.getName());
+	        properties.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG,
+	                io.confluent.kafka.serializers.KafkaAvroSerializer.class.getName());
 	       
 	    	String outputTopic = null;
 	        
 	    
-	    	if(args.length!=2) {
-	    		 System.err.println("java -jar <jar file> <properties file> <avsc file>");
+	    	if(args.length!=1) {
+	    		 System.err.println("java -jar <jar file> <properties file>");
 	   	      return;
 	    		
 	    	}
@@ -73,7 +78,7 @@ public class KafkaAvroProducer {
 	        
 	        
 	        
-	        Schema schema = new Schema.Parser().parse(new FileInputStream(args[1]));
+	      //  Schema schema = new Schema.Parser().parse(new FileInputStream(args[1]));
 	        
 			/*
 			 * GenericRecord Customer = new GenericData.Record(schema);
@@ -83,8 +88,8 @@ public class KafkaAvroProducer {
 			 */
 
 	        
-	        Customer data = Customer.newBuilder().setName("ABCD").setAge(20).setCity("Delhi").build();
-	        Customer dataInvalid = Customer.newBuilder().setName("EFGH").setAge(30).setCity("Mumbai").build();
+	        Customer data = Customer.newBuilder().setId(1).setName("Namrata").setAge(20).setCity("Delhi").build();
+	        Customer dataInvalid = Customer.newBuilder().setId(5).setName("Aishwarya").setAge(25).setCity("Chennai").build();
 	        		//String val = "{'name':{'string':'ABCD'},'age':{'long':20},'city':{'string':'New DELHI'}}";
 	     // construct kafka producer.
 	        KafkaProducer<String,Customer> producer = new KafkaProducer<String,Customer>(properties);
