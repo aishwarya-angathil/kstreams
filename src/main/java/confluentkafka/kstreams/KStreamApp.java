@@ -48,15 +48,30 @@ public class KStreamApp {
         	String exceptionTopic = null;
         	String compactedTopic = null;
         if(!allConfig.isEmpty()) {
-        	props.put(StreamsConfig.APPLICATION_ID_CONFIG, allConfig.getProperty("app"));
-            props.put(StreamsConfig.BOOTSTRAP_SERVERS_CONFIG, allConfig.getProperty("bootstrap")); // confluent Bootstrap Servers
-            props.put(StreamsConfig.DEFAULT_KEY_SERDE_CLASS_CONFIG, Serdes.String().getClass());
-            props.put(StreamsConfig.DEFAULT_VALUE_SERDE_CLASS_CONFIG, SpecificAvroSerde.class); 
-            props.put("schema.registry.url", allConfig.getProperty("schemaregistry"));// Schema Registry URL
-            props.put(SaslConfigs.SASL_MECHANISM, allConfig.getProperty("mechanism"));
-            props.put(StreamsConfig.SECURITY_PROTOCOL_CONFIG,allConfig.getProperty("protocol"));
-            props.put(SaslConfigs.SASL_JAAS_CONFIG, allConfig.getProperty("jaasmodule")+" required username=\""+allConfig.getProperty("jaasuser")+"\" password=\""+allConfig.getProperty("jaaspwd")+"\";");
-             inputTopic=allConfig.getProperty("inputtopic");
+        	if(allConfig.getProperty("app")!=null && !allConfig.getProperty("app").isBlank() )
+        		props.put(StreamsConfig.APPLICATION_ID_CONFIG, allConfig.getProperty("app"));
+        	
+        	if(allConfig.getProperty("bootstrap")!=null && !allConfig.getProperty("bootstrap").isBlank())
+        		props.put(StreamsConfig.BOOTSTRAP_SERVERS_CONFIG, allConfig.getProperty("bootstrap")); // confluent Bootstrap Servers
+            
+        	props.put(StreamsConfig.DEFAULT_KEY_SERDE_CLASS_CONFIG, Serdes.String().getClass());
+            props.put(StreamsConfig.DEFAULT_VALUE_SERDE_CLASS_CONFIG, SpecificAvroSerde.class);
+            
+            if(allConfig.getProperty("schemaregistry")!= null && !allConfig.getProperty("schemaregistry").isBlank())
+            	props.put("schema.registry.url", allConfig.getProperty("schemaregistry"));// Schema Registry URL
+            
+            if(allConfig.getProperty("mechanism")!=null && !allConfig.getProperty("mechanism").isBlank())
+            	props.put(SaslConfigs.SASL_MECHANISM, allConfig.getProperty("mechanism"));
+            
+            if(allConfig.getProperty("protocol")!=null && !allConfig.getProperty("protocol").isBlank())
+            	props.put(StreamsConfig.SECURITY_PROTOCOL_CONFIG,allConfig.getProperty("protocol"));
+            
+            if(allConfig.getProperty("jaasmodule")!=null &&!allConfig.getProperty("jaasmodule").isBlank() &&
+            		allConfig.getProperty("jaasuser")!=null && !allConfig.getProperty("jaasuser").isBlank() &&
+            		allConfig.getProperty("jaaspwd")!=null && !allConfig.getProperty("jaaspwd").isBlank())
+            			props.put(SaslConfigs.SASL_JAAS_CONFIG, allConfig.getProperty("jaasmodule")+" required username=\""+allConfig.getProperty("jaasuser")+"\" password=\""+allConfig.getProperty("jaaspwd")+"\";");
+            
+            inputTopic=allConfig.getProperty("inputtopic");
         	 outputTopic = allConfig.getProperty("outputtopic");
         	 exceptionTopic = allConfig.getProperty("exceptiontopic");
 
@@ -151,13 +166,26 @@ public class KStreamApp {
 	    	String compactedTopic = null;
 	        
 	        if(!allConfig.isEmpty()) {
+	        	if(allConfig.getProperty("app")!=null && !allConfig.getProperty("app").isBlank())
 	        	properties.put(StreamsConfig.APPLICATION_ID_CONFIG, allConfig.getProperty("app")+"producer");
+	        	
+	        	if(allConfig.getProperty("bootstrap")!=null && !allConfig.getProperty("bootstrap").isBlank())
 	        	properties.put(StreamsConfig.BOOTSTRAP_SERVERS_CONFIG, allConfig.getProperty("bootstrap")); // confluent Bootstrap Servers
 	        	
+	        	if(allConfig.getProperty("schemaregistry")!=null && !allConfig.getProperty("schemaregistry").isBlank())
 	        	properties.put("schema.registry.url", allConfig.getProperty("schemaregistry"));// Schema Registry URL
+	        	
+	        	if(allConfig.getProperty("mechanism")!=null && !allConfig.getProperty("mechanism").isBlank())
 	        	properties.put(SaslConfigs.SASL_MECHANISM, allConfig.getProperty("mechanism"));
+	        	
+	        	if(allConfig.getProperty("protocol")!=null && !allConfig.getProperty("protocol").isBlank())
 	        	properties.put(StreamsConfig.SECURITY_PROTOCOL_CONFIG,allConfig.getProperty("protocol"));
-	        	properties.put(SaslConfigs.SASL_JAAS_CONFIG, allConfig.getProperty("jaasmodule")+" required username=\""+allConfig.getProperty("jaasuser")+"\" password=\""+allConfig.getProperty("jaaspwd")+"\";");
+	        	
+
+	            if(allConfig.getProperty("jaasmodule")!=null &&!allConfig.getProperty("jaasmodule").isBlank() &&
+	            		allConfig.getProperty("jaasuser")!=null && !allConfig.getProperty("jaasuser").isBlank() &&
+	            		allConfig.getProperty("jaaspwd")!=null && !allConfig.getProperty("jaaspwd").isBlank())
+	            			properties.put(SaslConfigs.SASL_JAAS_CONFIG, allConfig.getProperty("jaasmodule")+" required username=\""+allConfig.getProperty("jaasuser")+"\" password=\""+allConfig.getProperty("jaaspwd")+"\";");
 	   
 	        	 outputTopic = allConfig.getProperty("inputtopic");
 	        	 compactedTopic = allConfig.getProperty("compactedTopic");;
