@@ -11,6 +11,7 @@ public class Joiner implements ValueJoiner<Customer, InputCustomer, UpdatedCusto
 	@Override
 	public UpdatedCustomer apply(Customer value1, InputCustomer value2) {
 		// TODO Auto-generated method stub
+		System.out.println("Joining valid data and Ktable data -> "+value1.getName()+"  "+value2.getLastName()+" "+value1.getAge()+" "+ value1.getCity());
 		return UpdatedCustomer.newBuilder()
 	    		.setFirstName(value1.getName())
 	            .setLastName(value2.getLastName())

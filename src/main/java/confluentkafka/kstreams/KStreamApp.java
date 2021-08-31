@@ -33,14 +33,17 @@ import java.util.concurrent.CountDownLatch;
 public class KStreamApp {
 	static Properties allConfig = new Properties();
     public static void main(String[] args) throws Exception {
-    	
+    	System.out.println("KStreamApp started main method");
         
         if(args.length>0) {
+        	System.out.println("Args passed ->"+args.length);
+        	System.out.println ( "Loading property file  ->"+args[0]);
         	InputStream inputConf = new FileInputStream(args[0]);
         	allConfig.load(inputConf);
         }
         
         if(args[1].equalsIgnoreCase("C")) {
+        	System.out.println("Setting consumer because args ->"+args[1]);
         	Properties props = new Properties();
         	
         	String inputTopic=null;
@@ -48,6 +51,7 @@ public class KStreamApp {
         	String exceptionTopic = null;
         	String compactedTopic = null;
         if(!allConfig.isEmpty()) {
+        	System.out.println("Setting consumer properties from prop file");
         	if(allConfig.getProperty("app")!=null && !allConfig.getProperty("app").isBlank() )
         		props.put(StreamsConfig.APPLICATION_ID_CONFIG, allConfig.getProperty("app"));
         	
@@ -76,6 +80,7 @@ public class KStreamApp {
         	 exceptionTopic = allConfig.getProperty("exceptiontopic");
 
         }else {
+        	System.out.println("Setting default consumer properties ");
         props.put(StreamsConfig.APPLICATION_ID_CONFIG, "streams-t0618");
         props.put(StreamsConfig.BOOTSTRAP_SERVERS_CONFIG, "kafka:9071"); // confluent Bootstrap Servers
         props.put(StreamsConfig.DEFAULT_KEY_SERDE_CLASS_CONFIG, Serdes.String().getClass());
@@ -95,7 +100,7 @@ public class KStreamApp {
 
         KStream<String, Customer> source = builder.stream(inputTopic,Consumed.with(Serdes.String(), customerSerde));
         KTable<String, InputCustomer> tble = builder.table(compactedTopic, Consumed.with(Serdes.String(), inputCustomerSerde));
-        
+        System.out.println("Building Kstream and Ktable");
         @SuppressWarnings("unchecked") // can we check type of datatype for al fields?
 		KStream<String, Customer>[] branch = source
         		 .branch((key, appearance) -> (appearance.getName().equalsIgnoreCase("Namrata")),
@@ -106,18 +111,19 @@ public class KStreamApp {
 
       
        branch[1].to(exceptionTopic);
-        
+       System.out.println("Sending data to exception topic");
         
         
        // KStream<String, UpdatedCustomer> dest = branch[0].mapValues(v->transformEvents(v));
        
        
        final Joiner joiner = new Joiner();
-       
+       System.out.println("Joining valid data and Ktable data");
        KStream<String, UpdatedCustomer> dest = branch[0].join(tble, joiner);
+       
     
         dest.print(Printed.toSysOut());
-        
+        System.out.println("Sending updated data to output topic");
         dest.to(outputTopic); // do we need to uncomment for writing data to output tiopic?
 
 
@@ -148,6 +154,7 @@ public class KStreamApp {
         
         if(args[1].equals("P")) {
 
+        	System.out.println("Setting consumer because args ->"+args[1]);
 	        Properties properties = new Properties();
 	        // normal producer
 	       
@@ -164,8 +171,10 @@ public class KStreamApp {
 	    	String outputTopic = null;
 	        
 	    	String compactedTopic = null;
+	    	String key = null;
 	        
 	        if(!allConfig.isEmpty()) {
+	        	System.out.println("Setting producer properties from prop file");
 	        	if(allConfig.getProperty("app")!=null && !allConfig.getProperty("app").isBlank())
 	        	properties.put(StreamsConfig.APPLICATION_ID_CONFIG, allConfig.getProperty("app")+"producer");
 	        	
@@ -188,9 +197,14 @@ public class KStreamApp {
 	            			properties.put(SaslConfigs.SASL_JAAS_CONFIG, allConfig.getProperty("jaasmodule")+" required username=\""+allConfig.getProperty("jaasuser")+"\" password=\""+allConfig.getProperty("jaaspwd")+"\";");
 	   
 	        	 outputTopic = allConfig.getProperty("inputtopic");
-	        	 compactedTopic = allConfig.getProperty("compactedTopic");;
+	        	 compactedTopic = allConfig.getProperty("compactedTopic");
+	        	 
+	        	 if(allConfig.getProperty("key")!= null && !allConfig.getProperty("key").isBlank())
+	        		 key = allConfig.getProperty("key");
 
 	        }else {
+	        	
+	        	System.out.println("Setting default producer properties");
 	        	properties.put(StreamsConfig.APPLICATION_ID_CONFIG, "streams-t0618producer");
 	        	properties.put(StreamsConfig.BOOTSTRAP_SERVERS_CONFIG, "kafka:9071"); // confluent Bootstrap Servers
 	        	properties.put("schema.registry.url", "http://schemaregistry:8081");// Schema Registry URL
@@ -212,7 +226,7 @@ public class KStreamApp {
 			 * Customer.put("Name", "Eric"); Customer.put("Age", 65); Customer.put("City",
 			 * "Mumbai");
 			 */
-
+	        System.out.println("Creating data for raw and compacted topic");
 	        
 	        Customer data = Customer.newBuilder().setId(1).setName("Namrata").setAge(20).setCity("Delhi").build();
 	        InputCustomer compctedData = InputCustomer.newBuilder().setId(1).setFirstName("Namrata").setLastName("Kasana").setAddress("Gurgain,Haryana,Delhi").setEmail("namitakasana@gmail.com").setLevel("1").build();
@@ -220,35 +234,81 @@ public class KStreamApp {
 	        Customer dataInvalid = Customer.newBuilder().setId(5).setName("Aishwarya").setAge(25).setCity("Chennai").build();
 	        		//String val = "{'name':{'string':'ABCD'},'age':{'long':20},'city':{'string':'New DELHI'}}";
 	     // construct kafka producer.
+	        
+	        System.out.println("Creating producers for raw and compacted topic");
 	        KafkaProducer<String,Customer> producer = new KafkaProducer<String,Customer>(properties);
 	        KafkaProducer<String,InputCustomer> compactedProducer = new KafkaProducer<String,InputCustomer>(properties);
-
+	        
 	      
 	        ProducerRecord<String,Customer> record = new ProducerRecord<>(outputTopic, data);
 	        ProducerRecord<String,Customer> recordInvalid = new ProducerRecord<>(outputTopic, dataInvalid);
+	        ProducerRecord<String,InputCustomer> compactedRecord = null;
+	        ProducerRecord<String,InputCustomer> compactedRecordNew = null;
 	        
-	        ProducerRecord<String,InputCustomer> compactedRecord = new ProducerRecord<>(compactedTopic, compctedData);
-	        ProducerRecord<String,InputCustomer> compactedRecordNew = new ProducerRecord<>(compactedTopic, compctedDataNew);
+	        if(null!=key) {
+	        	System.out.println("Key to be provided for compacted is -> "+key);
+	        	if(key.contains("name")) {
+	        		
+	        		System.out.println("setting key as firstname");
+			        compactedRecord = new ProducerRecord<>(compactedTopic, compctedData.getFirstName(),compctedData);
+			        compactedRecordNew = new ProducerRecord<>(compactedTopic, compctedDataNew.getFirstName() , compctedDataNew);
+			      }
+	        	
+	        	else if(key.contains("id")) {
+	        		
+	        		System.out.println("Setting key as Id");
+			        compactedRecord = new ProducerRecord<>(compactedTopic, String.valueOf(compctedData.getId()),compctedData);
+			        compactedRecordNew = new ProducerRecord<>(compactedTopic, String.valueOf(compctedDataNew.getId()) , compctedDataNew);
+			      }
+	        	
+	        	else {
+	        		
+	        		System.out.println("No key has been set as the value doesnt match name or id");
+	        		 compactedRecord = new ProducerRecord<>(compactedTopic,compctedData);
+				        compactedRecordNew = new ProducerRecord<>(compactedTopic, compctedDataNew);
+	        	}
+	        }else {
+	        	
+	        	System.out.println("No key set as key is null");
+       		 		compactedRecord = new ProducerRecord<>(compactedTopic,compctedData);
+			        compactedRecordNew = new ProducerRecord<>(compactedTopic, compctedDataNew);
+       	}
+
 	        
 	        try {
+	        	
+	        	System.out.println("Sending data to compacted topic");
 	        	compactedProducer.send(compactedRecord);
 	        	compactedProducer.send(compactedRecordNew);
 	        	while(true) {
+	        		System.out.println("Sending data to raw topic");
 	        	  producer.send(record);
 	        	  producer.send(recordInvalid);
 	        	  
 	        	}
 	        	} catch(SerializationException e) {
 	        	  // may need to do something with it
-	        		System.out.println("Execption Found "+e.getMessage());
+	        		System.out.println("Execption Found in Producer "+e.getMessage());
+	        		e.printStackTrace();
+	        	}catch (Exception e1) {
+	        		System.out.println("Execption Found in Producer "+e1.getMessage());
+	        		e1.printStackTrace();
 	        	}
 	        	// When you're finished producing records, you can flush the producer to ensure it has all been written to Kafka and
 	        	// then close the producer to free its resources.
 	        	finally {
+	        		
+	        		try {
+	        			System.out.println("Flushing and closing producers");
 	        	  compactedProducer.flush();
 	        	  compactedProducer.close();
 	        	  producer.flush();
 	        	  producer.close();
+	        	  System.out.println("Flushing and closing complete ");
+	        		}catch(Exception e) {
+	        			System.out.println("Execption Found in Producer Finally "+e.getMessage());
+		        		e.printStackTrace();
+	        		}
 	        	}
 
 
