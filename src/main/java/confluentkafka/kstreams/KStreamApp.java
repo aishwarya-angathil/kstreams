@@ -344,7 +344,7 @@ public class KStreamApp {
 	        	compactedProducer.send(compactedRecordNew);
 	        	compactedProducer.send(compactedRecordSumit);
 	        	compactedProducer.send(compactedRecordSumitNew);
-	        	compactedProducer.send(compactedRecordAish);
+	        	//compactedProducer.send(compactedRecordAish);
 	        	
 	        	int i = 0;
 	        	while(i<=messagesCount) {
