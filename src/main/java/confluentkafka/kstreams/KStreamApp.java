@@ -24,6 +24,7 @@ import io.confluent.kafka.streams.serdes.avro.SpecificAvroSerde;
 
 import java.io.FileInputStream;
 import java.io.InputStream;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Locale;
@@ -169,12 +170,9 @@ public class KStreamApp {
 	        properties.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG,
 	                io.confluent.kafka.serializers.KafkaAvroSerializer.class.getName());
 	       
-	    	String outputTopic = null;
-	        
-	    	String compactedTopic = null;
-	    	String key = null;
-	    	String rawKey = null;
+	    	
 	    	int messagesCount=10;
+	        HashMap<String, String > otherprop = new HashMap<>();
 	        
 	        if(!allConfig.isEmpty()) {
 	        	System.out.println("Setting producer properties from prop file");
@@ -198,15 +196,18 @@ public class KStreamApp {
 	            		allConfig.getProperty("jaasuser")!=null && !allConfig.getProperty("jaasuser").isBlank() &&
 	            		allConfig.getProperty("jaaspwd")!=null && !allConfig.getProperty("jaaspwd").isBlank())
 	            			properties.put(SaslConfigs.SASL_JAAS_CONFIG, allConfig.getProperty("jaasmodule")+" required username=\""+allConfig.getProperty("jaasuser")+"\" password=\""+allConfig.getProperty("jaaspwd")+"\";");
-	   
-	        	 outputTopic = allConfig.getProperty("inputtopic");
-	        	 compactedTopic = allConfig.getProperty("compactedTopic");
+	            
+	            otherprop.put("outputTopic", allConfig.getProperty("inputtopic"));
+	            otherprop.put("compactedTopic", allConfig.getProperty("compactedTopic"));
+	        	 
 	        	 
 	        	 if(allConfig.getProperty("key")!= null && !allConfig.getProperty("key").isBlank())
-	        		 key = allConfig.getProperty("key");
+	        		 otherprop.put("key", allConfig.getProperty("key"));
+	        	
 	        	 
 	        	 if(allConfig.getProperty("rawKey")!= null && !allConfig.getProperty("rawKey").isBlank())
-	        		 rawKey = allConfig.getProperty("rawKey");
+	        		 otherprop.put("rawKey", allConfig.getProperty("rawKey"));
+	        		 
 	        	 
 	        	 
 	        	 
@@ -223,8 +224,10 @@ public class KStreamApp {
 	        	properties.put(SaslConfigs.SASL_MECHANISM, "PLAIN");
 	        	properties.put(StreamsConfig.SECURITY_PROTOCOL_CONFIG,"SASL_PLAINTEXT");
 	        	properties.put(SaslConfigs.SASL_JAAS_CONFIG, "org.apache.kafka.common.security.plain.PlainLoginModule required username=\"test\" password=\"test123\";");
-	   	 outputTopic = "customer";
-	   	compactedTopic = "compactedTopic";
+	   	
+	    otherprop.put("outputTopic", "customer");
+        otherprop.put("compactedTopic", "compactedTopic");
+    	 
 	        }
 	        
 	        
@@ -240,117 +243,119 @@ public class KStreamApp {
 			 */
 	        System.out.println("Creating data for raw and compacted topic");
 	        
-	        Customer data = Customer.newBuilder().setId(1).setName("Namrata").setAge(20).setCity("Delhi").build();
-	        InputCustomer compctedData = InputCustomer.newBuilder().setId(1).setFirstName("Namrata").setLastName("Kasana").setAddress("Gurgain,Haryana,Delhi").setEmail("namitakasana@gmail.com").setLevel("1").build();
-	        InputCustomer compctedDataNew = InputCustomer.newBuilder().setId(1).setFirstName("Namrata").setLastName("Kasana").setAddress("TCS Gurgaon,Haryana,Delhi,Manchester").setEmail("namitakasana@gmail.com").setLevel("1").build();
-	        InputCustomer compctedDataSumit = InputCustomer.newBuilder().setId(2).setFirstName("Sumit").setLastName("Sethi").setAddress("Gurgaon,Haryana,Delhi").setEmail("sumitsethi@gmail.com").setLevel("1").build();
-	        InputCustomer compctedDataSumitNew = InputCustomer.newBuilder().setId(2).setFirstName("Sumit").setLastName("Sethi").setAddress("Paschim Vihar,Delhi").setEmail("sumitsethi@gmail.com").setLevel("1").build();
-	        InputCustomer compctedDataAish = InputCustomer.newBuilder().setId(3).setFirstName("Aishwarya").setLastName("Angathil").setAddress("Noida,Uttar pradesh").setEmail("aishwarya@gmail.com").setLevel("1").build();
-	        Customer dataInvalid = Customer.newBuilder().setId(5).setName("Aishwarya").setAge(25).setCity("Chennai").build();
-	        		//String val = "{'name':{'string':'ABCD'},'age':{'long':20},'city':{'string':'New DELHI'}}";
+	        
+	        
+	        ArrayList<ProducerRecord<String,Customer>> producerRecord = new ArrayList< ProducerRecord<String,Customer>>();
+	        ArrayList<ProducerRecord<String,InputCustomer>> compactedProducerRecord = new ArrayList< ProducerRecord<String,InputCustomer>>();
+	     
+	        allConfig.stringPropertyNames().parallelStream().filter(x->x.startsWith("data.raw.valid")).forEach( y ->{
+	        	String value = allConfig.getProperty(y);
+	        	System.out.println("Building data and record for " + y);
+	        	String att [] = value.split(",");
+	        	 Customer data = Customer.newBuilder().setId(Integer.valueOf(att[0])).setName(att[1]).setAge(Integer.valueOf(att[2])).setCity(att[3]).build();
+	        
+	        	 String k = otherprop.get("rawKey");
+	        	 String out = otherprop.get("outputTopic");
+	        	 if(null!=k) {
+	 	        	
+	 	        	if(k.contains("name")) {
+	 	        		System.out.println("Key to be provided for valid raw is -> "+k);
+	 	        		producerRecord.add(new ProducerRecord<>(out,data.getName(), data));
+	 	        	}
+	 	        	else if(k.contains("id")) {
+	 	        		System.out.println("Key to be provided for valid RAW is -> "+k);
+	 	        		producerRecord.add(new ProducerRecord<>(out,String.valueOf(data.getId()), data));
+	 	        	}else {
+	 	        		System.out.println("No key has been set for valid RAW as the value doesnt match name or id");
+	 	        		producerRecord.add(new ProducerRecord<>(out, data));
+	 	        	}
+	 	        }else {
+	 	        	System.out.println("No key set for valid RAW as key is null");
+	 	        	producerRecord.add(new ProducerRecord<>(out, data));
+	 	        }
+	        });
+	        allConfig.stringPropertyNames().parallelStream().filter(x->x.startsWith("data.raw.invalid")).forEach( y ->{
+	        	String value = allConfig.getProperty(y);
+	        	System.out.println("Building data and record for " + y);
+	        	String att [] = value.split(",");
+	        	 Customer data = Customer.newBuilder().setId(Integer.valueOf(att[0])).setName(att[1]).setAge(Integer.valueOf(att[2])).setCity(att[3]).build();
+
+	        	 String k = otherprop.get("rawKey");
+	        	 String out = otherprop.get("outputTopic");
+	        	 
+	        	 if(null!=k) {
+		 	        	
+		 	        	if(k.contains("name")) {
+		 	        		System.out.println("Key to be provided for invalid raw is -> "+k);
+		 	        		producerRecord.add(new ProducerRecord<>(out,data.getName(), data));
+		 	        	}
+		 	        	else if(k.contains("id")) {
+		 	        		System.out.println("Key to be provided for invalid RAW is -> "+k);
+		 	        		producerRecord.add(new ProducerRecord<>(out,String.valueOf(data.getId()), data));
+		 	        	}else {
+		 	        		System.out.println("No key has been set for invalid RAW as the value doesnt match name or id");
+		 	        		producerRecord.add(new ProducerRecord<>(out, data));
+		 	        	}
+		 	        }else {
+		 	        	System.out.println("No key set for invalid RAW as key is null");
+		 	        	producerRecord.add(new ProducerRecord<>(out, data));
+		 	        }
+	        });
+	        allConfig.stringPropertyNames().parallelStream().filter(x->x.startsWith("data.compacted")).forEach( y ->{
+	        	String value = allConfig.getProperty(y);
+	        	System.out.println("Building data and record for " + y);
+	        	String att [] = value.split(",");
+	        	InputCustomer data = InputCustomer.newBuilder().setId(Integer.valueOf(att[0])).setFirstName(att[1]).setLastName(att[2]).setAddress(att[3]).setEmail(att[4]).setLevel(att[5]).build();
+	        	String k = otherprop.get("key");
+	        	String out = otherprop.get("compactedTopic");
+	        	 if(null!=k) {
+	 	        	System.out.println("Key to be provided for compacted is -> "+k);
+	 	        	if(k.contains("name")) {
+	 	        		System.out.println("setting key as firstname");
+	 	        		compactedProducerRecord.add(new ProducerRecord<>(out, data.getFirstName(),data));
+	 			      }
+	 	        	else if(k.contains("id")) {
+	 	        		
+	 	        		System.out.println("Key to be provided for compacted is -> "+k);
+	 	        		compactedProducerRecord.add(new ProducerRecord<>(out, String.valueOf(data.getId()),data));
+	 			          
+	 			      }
+	 	        	
+	 	        	else {
+	 	        		
+	 	        		System.out.println("No key has been set as the value doesnt match name or id for compacted");
+	 	        		compactedProducerRecord.add(new ProducerRecord<>(out, data));
+	 	        		
+	 			
+	 	        	}
+	 	        }else {
+	 	        	System.out.println("No key set for compacted as key is null");
+	 	        	compactedProducerRecord.add(new ProducerRecord<>(out, data));
+	        	}
+
+	        });
+	        
+		
 	     // construct kafka producer.
 	        
 	        System.out.println("Creating producers for raw and compacted topic");
 	        KafkaProducer<String,Customer> producer = new KafkaProducer<String,Customer>(properties);
 	        KafkaProducer<String,InputCustomer> compactedProducer = new KafkaProducer<String,InputCustomer>(properties);
-	        
-	      
-	        ProducerRecord<String,Customer> record = null;
-	        ProducerRecord<String,Customer> recordInvalid = null;
-	        ProducerRecord<String,InputCustomer> compactedRecord = null;
-	        ProducerRecord<String,InputCustomer> compactedRecordNew = null;
-	        ProducerRecord<String,InputCustomer> compactedRecordAish = null;
-	        ProducerRecord<String,InputCustomer> compactedRecordSumit = null;
-	        ProducerRecord<String,InputCustomer> compactedRecordSumitNew = null;
-	        
-	        
-	        if(null!=rawKey) {
-	        	System.out.println("Key to be provided for raw is -> "+key);
-	        	if(rawKey.contains("name")) {
-	        		record = new ProducerRecord<>(outputTopic,data.getName(), data);
-	    	         recordInvalid = new ProducerRecord<>(outputTopic, dataInvalid.getName(),dataInvalid);
-	        	}
-	        	else if(rawKey.contains("id")) {
-	        		System.out.println("Key to be provided for RAW is -> "+key);
-	        		record = new ProducerRecord<>(outputTopic,String.valueOf(data.getId()), data);
-	    	         recordInvalid = new ProducerRecord<>(outputTopic, String.valueOf(dataInvalid.getId()),dataInvalid);
-	        	}else {
-	        		System.out.println("No key has been set for RAW as the value doesnt match name or id");
-	        		record = new ProducerRecord<>(outputTopic, data);
-	    	        recordInvalid = new ProducerRecord<>(outputTopic, dataInvalid);
-	        	}
-	        }else {
-	        	System.out.println("No key set for RAW as key is null");
-	        	record = new ProducerRecord<>(outputTopic, data);
-    	        recordInvalid = new ProducerRecord<>(outputTopic, dataInvalid);
-	        }
-	        
-	        if(null!=key) {
-	        	System.out.println("Key to be provided for compacted is -> "+key);
-	        	if(key.contains("name")) {
-	        		
-	        		System.out.println("setting key as firstname");
-			        compactedRecord = new ProducerRecord<>(compactedTopic, compctedData.getFirstName(),compctedData);
-			        compactedRecordNew = new ProducerRecord<>(compactedTopic, compctedDataNew.getFirstName() , compctedDataNew);
-
-			        compactedRecordSumit = new ProducerRecord<>(compactedTopic, compctedDataSumit.getFirstName(),compctedDataSumit);
-			        compactedRecordSumitNew = new ProducerRecord<>(compactedTopic, compctedDataSumitNew.getFirstName() , compctedDataSumitNew);
-
-			        compactedRecordAish = new ProducerRecord<>(compactedTopic, compctedDataAish.getFirstName(),compctedDataAish);
-			        
-			      }
-	        	
-	        	else if(key.contains("id")) {
-	        		
-	        		System.out.println("Key to be provided for compacted is -> "+key);
-			        compactedRecord = new ProducerRecord<>(compactedTopic, String.valueOf(compctedData.getId()),compctedData);
-			        compactedRecordNew = new ProducerRecord<>(compactedTopic, String.valueOf(compctedDataNew.getId()) , compctedDataNew);
-			        
-			        compactedRecordSumit = new ProducerRecord<>(compactedTopic, String.valueOf(compctedDataSumit.getId()),compctedDataSumit);
-			        compactedRecordSumitNew = new ProducerRecord<>(compactedTopic, String.valueOf(compctedDataSumitNew.getId()) , compctedDataSumitNew);
-
-			        compactedRecordAish = new ProducerRecord<>(compactedTopic, String.valueOf(compctedDataAish.getId()),compctedDataAish);
-			       
-			      }
-	        	
-	        	else {
-	        		
-	        		System.out.println("No key has been set as the value doesnt match name or id");
-	        		 compactedRecord = new ProducerRecord<>(compactedTopic,compctedData);
-				        compactedRecordNew = new ProducerRecord<>(compactedTopic, compctedDataNew);
-				        
-				        compactedRecordSumit = new ProducerRecord<>(compactedTopic,compctedDataSumit);
-				        compactedRecordSumitNew = new ProducerRecord<>(compactedTopic, compctedDataSumitNew);
-
-				        compactedRecordAish = new ProducerRecord<>(compactedTopic,compctedDataAish);
-			
-	        	}
-	        }else {
-	        	
-	        	System.out.println("No key set for compacted as key is null");
-       		 		compactedRecord = new ProducerRecord<>(compactedTopic,compctedData);
-			        compactedRecordNew = new ProducerRecord<>(compactedTopic, compctedDataNew);
-			        compactedRecordSumit = new ProducerRecord<>(compactedTopic,compctedDataSumit);
-			        compactedRecordSumitNew = new ProducerRecord<>(compactedTopic, compctedDataSumitNew);
-
-			        compactedRecordAish = new ProducerRecord<>(compactedTopic,compctedDataAish);
-       	}
-
-	        
+	       	        
 	        try {
 	        	
 	        	System.out.println("Sending data to compacted topic");
-	        	compactedProducer.send(compactedRecord);
-	        	compactedProducer.send(compactedRecordNew);
-	        	compactedProducer.send(compactedRecordSumit);
-	        	compactedProducer.send(compactedRecordSumitNew);
-	        	//compactedProducer.send(compactedRecordAish);
+	        	compactedProducerRecord.forEach(x -> {
+	        		compactedProducer.send(x);
+	        	});
+	        	
 	        	
 	        	int i = 0;
 	        	while(i<=messagesCount) {
 	        		System.out.println("Sending data to raw topic");
-	        	  producer.send(record);
-	        	  producer.send(recordInvalid);
+	        		producerRecord.forEach(x -> {
+	        			producer.send(x);
+		        	});
 	        	  i++;
 	        	}
 	        	} catch(SerializationException e) {
