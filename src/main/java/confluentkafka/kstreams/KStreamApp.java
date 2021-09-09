@@ -1,5 +1,6 @@
 package confluentkafka.kstreams;
 
+import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.producer.KafkaProducer;
 import org.apache.kafka.clients.producer.ProducerConfig;
 import org.apache.kafka.clients.producer.ProducerRecord;
@@ -51,6 +52,21 @@ public class KStreamApp {
         	String outputTopic = null;
         	String exceptionTopic = null;
         	String compactedTopic = null;
+        	
+        	
+        	 
+ 	        
+ 	        
+ 	      // props.put(StreamsConfig.DEFAULT_KEY_SERDE_CLASS_CONFIG, Serdes.String().getClass());
+         //  props.put(StreamsConfig.DEFAULT_VALUE_SERDE_CLASS_CONFIG, SpecificAvroSerde.class);
+           
+           props.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG,
+	                org.apache.kafka.common.serialization.StringDeserializer.class.getName());
+	        props.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG,
+	                io.confluent.kafka.serializers.KafkaAvroDeserializer.class.getName());
+	        
+	        
+           
         if(!allConfig.isEmpty()) {
         	System.out.println("Setting consumer properties from prop file");
         	if(allConfig.getProperty("app")!=null && !allConfig.getProperty("app").isBlank() )
@@ -59,8 +75,7 @@ public class KStreamApp {
         	if(allConfig.getProperty("bootstrap")!=null && !allConfig.getProperty("bootstrap").isBlank())
         		props.put(StreamsConfig.BOOTSTRAP_SERVERS_CONFIG, allConfig.getProperty("bootstrap")); // confluent Bootstrap Servers
             
-        	props.put(StreamsConfig.DEFAULT_KEY_SERDE_CLASS_CONFIG, Serdes.String().getClass());
-            props.put(StreamsConfig.DEFAULT_VALUE_SERDE_CLASS_CONFIG, SpecificAvroSerde.class);
+        	
             
             if(allConfig.getProperty("schemaregistry")!= null && !allConfig.getProperty("schemaregistry").isBlank())
             	props.put("schema.registry.url", allConfig.getProperty("schemaregistry"));// Schema Registry URL
@@ -85,8 +100,7 @@ public class KStreamApp {
         	System.out.println("Setting default consumer properties ");
         props.put(StreamsConfig.APPLICATION_ID_CONFIG, "streams-t0618");
         props.put(StreamsConfig.BOOTSTRAP_SERVERS_CONFIG, "kafka:9071"); // confluent Bootstrap Servers
-        props.put(StreamsConfig.DEFAULT_KEY_SERDE_CLASS_CONFIG, Serdes.String().getClass());
-        props.put(StreamsConfig.DEFAULT_VALUE_SERDE_CLASS_CONFIG, SpecificAvroSerde.class); 
+        
         props.put("schema.registry.url", "http://schemaregistry:8081");// Schema Registry URL
         props.put(SaslConfigs.SASL_MECHANISM, "PLAIN");
         props.put(StreamsConfig.SECURITY_PROTOCOL_CONFIG,"SASL_PLAINTEXT");
