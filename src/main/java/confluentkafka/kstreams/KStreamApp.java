@@ -21,6 +21,8 @@ import com.training.Customer;
 import com.training.InputCustomer;
 import com.training.OutputCustomer;
 import com.training.UpdatedCustomer;
+
+import io.confluent.kafka.serializers.KafkaAvroDeserializerConfig;
 import io.confluent.kafka.streams.serdes.avro.SpecificAvroSerde;
 
 import java.io.FileInputStream;
@@ -64,9 +66,8 @@ public class KStreamApp {
 	                org.apache.kafka.common.serialization.StringDeserializer.class.getName());
 	        props.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG,
 	                io.confluent.kafka.serializers.KafkaAvroDeserializer.class.getName());
-	        
-	        
-           
+	        props.put(KafkaAvroDeserializerConfig.SPECIFIC_AVRO_READER_CONFIG, "true");
+	        props.put(ConsumerConfig.GROUP_ID_CONFIG, "group_json");
         if(!allConfig.isEmpty()) {
         	System.out.println("Setting consumer properties from prop file");
         	if(allConfig.getProperty("app")!=null && !allConfig.getProperty("app").isBlank() )
@@ -77,8 +78,11 @@ public class KStreamApp {
             
         	
             
-            if(allConfig.getProperty("schemaregistry")!= null && !allConfig.getProperty("schemaregistry").isBlank())
+            if(allConfig.getProperty("schemaregistry")!= null && !allConfig.getProperty("schemaregistry").isBlank()) {
             	props.put("schema.registry.url", allConfig.getProperty("schemaregistry"));// Schema Registry URL
+            	props.put(KafkaAvroDeserializerConfig.SCHEMA_REGISTRY_URL_CONFIG , allConfig.getProperty("schemaregistry"));
+            }
+            	
             
             if(allConfig.getProperty("mechanism")!=null && !allConfig.getProperty("mechanism").isBlank())
             	props.put(SaslConfigs.SASL_MECHANISM, allConfig.getProperty("mechanism"));
