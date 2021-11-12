@@ -19,9 +19,9 @@ import org.apache.kafka.streams.kstream.Produced;
 
 import com.training.Customer;
 import com.training.InputCustomer;
-import com.training.OutputCustomer;
 import com.training.UpdatedCustomer;
 
+import io.confluent.kafka.serializers.AbstractKafkaAvroSerDeConfig;
 import io.confluent.kafka.serializers.KafkaAvroDeserializerConfig;
 import io.confluent.kafka.streams.serdes.avro.SpecificAvroSerde;
 
@@ -29,8 +29,10 @@ import java.io.FileInputStream;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Locale;
+import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.CountDownLatch;
 
@@ -56,9 +58,6 @@ public class KStreamApp {
         	String compactedTopic = null;
         	
         	
-        	 
- 	        
- 	        
  	      // props.put(StreamsConfig.DEFAULT_KEY_SERDE_CLASS_CONFIG, Serdes.String().getClass());
          //  props.put(StreamsConfig.DEFAULT_VALUE_SERDE_CLASS_CONFIG, SpecificAvroSerde.class);
            
@@ -68,7 +67,13 @@ public class KStreamApp {
 	                io.confluent.kafka.serializers.KafkaAvroDeserializer.class.getName());
 	        props.put(KafkaAvroDeserializerConfig.SPECIFIC_AVRO_READER_CONFIG, "true");
 	        props.put(ConsumerConfig.GROUP_ID_CONFIG, "group_json");
-        if(!allConfig.isEmpty()) {
+       
+	        SpecificAvroSerde<Customer> customerSerde = new SpecificAvroSerde<Customer>();
+	        SpecificAvroSerde<InputCustomer> inputCustomerSerde = new SpecificAvroSerde<InputCustomer>();
+	        
+	        SpecificAvroSerde<UpdatedCustomer> updatedCustomerSerde = new SpecificAvroSerde<UpdatedCustomer>();
+	        
+	        if(!allConfig.isEmpty()) {
         	System.out.println("Setting consumer properties from prop file");
         	if(allConfig.getProperty("app")!=null && !allConfig.getProperty("app").isBlank() )
         		props.put(StreamsConfig.APPLICATION_ID_CONFIG, allConfig.getProperty("app"));
@@ -81,6 +86,12 @@ public class KStreamApp {
             if(allConfig.getProperty("schemaregistry")!= null && !allConfig.getProperty("schemaregistry").isBlank()) {
             	props.put("schema.registry.url", allConfig.getProperty("schemaregistry"));// Schema Registry URL
             	props.put(KafkaAvroDeserializerConfig.SCHEMA_REGISTRY_URL_CONFIG , allConfig.getProperty("schemaregistry"));
+            	
+            	Map<String, String> serdeConfig=Collections.singletonMap(AbstractKafkaAvroSerDeConfig.SCHEMA_REGISTRY_URL_CONFIG, allConfig.getProperty("schemaregistry"));
+            	customerSerde.configure(serdeConfig, false);
+            	inputCustomerSerde.configure(serdeConfig, false);
+            	updatedCustomerSerde.configure(serdeConfig, false);
+            	
             }
             	
             
@@ -106,6 +117,11 @@ public class KStreamApp {
         props.put(StreamsConfig.BOOTSTRAP_SERVERS_CONFIG, "kafka:9071"); // confluent Bootstrap Servers
         
         props.put("schema.registry.url", "http://schemaregistry:8081");// Schema Registry URL
+        
+        Map<String, String> serdeConfig=Collections.singletonMap(AbstractKafkaAvroSerDeConfig.SCHEMA_REGISTRY_URL_CONFIG, "http://schemaregistry:8081");
+    	customerSerde.configure(serdeConfig, false);
+    	inputCustomerSerde.configure(serdeConfig, false);
+    	updatedCustomerSerde.configure(serdeConfig, false);
         props.put(SaslConfigs.SASL_MECHANISM, "PLAIN");
         props.put(StreamsConfig.SECURITY_PROTOCOL_CONFIG,"SASL_PLAINTEXT");
         props.put(SaslConfigs.SASL_JAAS_CONFIG, "org.apache.kafka.common.security.plain.PlainLoginModule required username=\"test\" password=\"test123\";");
@@ -115,9 +131,7 @@ public class KStreamApp {
    	compactedTopic = "compactedTopic";
         }
         final StreamsBuilder builder = new StreamsBuilder();
-        SpecificAvroSerde<Customer> customerSerde = new SpecificAvroSerde<Customer>();
-        SpecificAvroSerde<InputCustomer> inputCustomerSerde = new SpecificAvroSerde<InputCustomer>();
-
+       
         KStream<String, Customer> source = builder.stream(inputTopic,Consumed.with(Serdes.String(), customerSerde));
         KTable<String, InputCustomer> tble = builder.table(compactedTopic, Consumed.with(Serdes.String(), inputCustomerSerde));
         System.out.println("Building Kstream and Ktable");
@@ -130,7 +144,8 @@ public class KStreamApp {
        // KStream<String, Customer>[] branched = branch[0].branch((key, appearance) -> (tble.filter((key1, appearance1) -> appearance1.getId().equals(appearance.getId())).));
 
       
-       branch[1].to(exceptionTopic);
+      // branch[1].to(exceptionTopic);
+       branch[1].to(exceptionTopic, Produced.with(Serdes.String(), customerSerde));
        System.out.println("Sending data to exception topic");
         
         
@@ -144,8 +159,8 @@ public class KStreamApp {
     
         dest.print(Printed.toSysOut());
         System.out.println("Sending updated data to output topic");
-        dest.to(outputTopic); // do we need to uncomment for writing data to output tiopic?
-
+       // dest.to(outputTopic); // do we need to uncomment for writing data to output tiopic?
+        dest.to(outputTopic, Produced.with(Serdes.String(), updatedCustomerSerde));
 
 
         final Topology topology = builder.build();
@@ -174,7 +189,7 @@ public class KStreamApp {
         
         if(args[1].equals("P")) {
 
-        	System.out.println("Setting consumer because args ->"+args[1]);
+        	System.out.println("Setting producer because args ->"+args[1]);
 	        Properties properties = new Properties();
 	        // normal producer
 	       
@@ -188,7 +203,9 @@ public class KStreamApp {
 	        properties.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG,
 	                io.confluent.kafka.serializers.KafkaAvroSerializer.class.getName());
 	       
-	    	
+	        SpecificAvroSerde<Customer> customerSerde = new SpecificAvroSerde<Customer>();
+	        SpecificAvroSerde<InputCustomer> inputCustomerSerde = new SpecificAvroSerde<InputCustomer>();
+	        
 	    	int messagesCount=10;
 	        HashMap<String, String > otherprop = new HashMap<>();
 	        
@@ -200,8 +217,14 @@ public class KStreamApp {
 	        	if(allConfig.getProperty("bootstrap")!=null && !allConfig.getProperty("bootstrap").isBlank())
 	        	properties.put(StreamsConfig.BOOTSTRAP_SERVERS_CONFIG, allConfig.getProperty("bootstrap")); // confluent Bootstrap Servers
 	        	
-	        	if(allConfig.getProperty("schemaregistry")!=null && !allConfig.getProperty("schemaregistry").isBlank())
-	        	properties.put("schema.registry.url", allConfig.getProperty("schemaregistry"));// Schema Registry URL
+	        	if(allConfig.getProperty("schemaregistry")!=null && !allConfig.getProperty("schemaregistry").isBlank()) {
+	        		properties.put("schema.registry.url", allConfig.getProperty("schemaregistry"));// Schema Registry URL
+	        		
+	        		Map<String, String> serdeConfig=Collections.singletonMap(AbstractKafkaAvroSerDeConfig.SCHEMA_REGISTRY_URL_CONFIG, allConfig.getProperty("schemaregistry"));
+	            	customerSerde.configure(serdeConfig, false);
+	            	inputCustomerSerde.configure(serdeConfig, false);
+	        	}
+	        	
 	        	
 	        	if(allConfig.getProperty("mechanism")!=null && !allConfig.getProperty("mechanism").isBlank())
 	        	properties.put(SaslConfigs.SASL_MECHANISM, allConfig.getProperty("mechanism"));
@@ -239,6 +262,9 @@ public class KStreamApp {
 	        	properties.put(StreamsConfig.APPLICATION_ID_CONFIG, "streams-t0618producer");
 	        	properties.put(StreamsConfig.BOOTSTRAP_SERVERS_CONFIG, "kafka:9071"); // confluent Bootstrap Servers
 	        	properties.put("schema.registry.url", "http://schemaregistry:8081");// Schema Registry URL
+	        	Map<String, String> serdeConfig=Collections.singletonMap(AbstractKafkaAvroSerDeConfig.SCHEMA_REGISTRY_URL_CONFIG, "http://schemaregistry:8081");
+            	customerSerde.configure(serdeConfig, false);
+            	inputCustomerSerde.configure(serdeConfig, false);
 	        	properties.put(SaslConfigs.SASL_MECHANISM, "PLAIN");
 	        	properties.put(StreamsConfig.SECURITY_PROTOCOL_CONFIG,"SASL_PLAINTEXT");
 	        	properties.put(SaslConfigs.SASL_JAAS_CONFIG, "org.apache.kafka.common.security.plain.PlainLoginModule required username=\"test\" password=\"test123\";");
@@ -357,8 +383,15 @@ public class KStreamApp {
 	     // construct kafka producer.
 	        
 	        System.out.println("Creating producers for raw and compacted topic");
-	        KafkaProducer<String,Customer> producer = new KafkaProducer<String,Customer>(properties);
-	        KafkaProducer<String,InputCustomer> compactedProducer = new KafkaProducer<String,InputCustomer>(properties);
+	        
+	        //KafkaProducer<String,Customer> producer = new KafkaProducer<String,Customer>(properties);
+	        //KafkaProducer<String,InputCustomer> compactedProducer = new KafkaProducer<String,InputCustomer>(properties);
+	        
+	        
+	        
+	        
+	        KafkaProducer<String,Customer> producer = new KafkaProducer<>(properties, Serdes.String().serializer(), customerSerde.serializer());
+	        KafkaProducer<String,InputCustomer> compactedProducer = new KafkaProducer<>(properties, Serdes.String().serializer(), inputCustomerSerde.serializer());
 	       	        
 	        try {
 	        	
@@ -389,11 +422,16 @@ public class KStreamApp {
 	        	finally {
 	        		
 	        		try {
-	        			System.out.println("Flushing and closing producers");
+	        			
+	        	  System.out.println("Closing serdes");
+	  	        	  customerSerde.close();
+	  	        	  inputCustomerSerde.close();	
+	        	  System.out.println("Flushing and closing producers");
 	        	  compactedProducer.flush();
 	        	  compactedProducer.close();
 	        	  producer.flush();
 	        	  producer.close();
+	        	  
 	        	  System.out.println("Flushing and closing complete ");
 	        		}catch(Exception e) {
 	        			System.out.println("Execption Found in Producer Finally "+e.getMessage());
