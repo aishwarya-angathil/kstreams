@@ -3,11 +3,11 @@
    "namespace" : "com.training",
    "name" : "OutputCustomer",
    "fields" : [
-      { "name" : "id" , "type" :  "int"},
-      { "name" : "Name" , "type" :  "string"},
-	  { "name" : "email" , "type" :  "string" },
-	  { "name" : "address" , "type" :  "string" },
-	  { "name" : "level" , "type" :  "string"}
+      { "name" : "id" , "type" :  ["null","int"], "default" : null },
+      { "name" : "Name" , "type" :  ["null","string"], "default" : null },
+	  { "name" : "email" , "type" :  ["null","string"], "default" : null  },
+	  { "name" : "address" , "type" :  ["null","string"], "default" : null  },
+	  { "name" : "level" , "type" :  ["null","string"], "default" : null }
 	  
    ]
 }

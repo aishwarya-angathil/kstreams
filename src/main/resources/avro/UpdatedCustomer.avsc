@@ -3,13 +3,13 @@
    "namespace" : "com.training",
    "name" : "UpdatedCustomer",
    "fields" : [
-      { "name" : "Id" , "type" : "int" },
-      { "name" : "FirstName" , "type" : "string" },
-	  { "name" : "LastName" , "type" : "string" },
-      { "name" : "Age" , "type" : "int" },
-	  { "name" : "City" , "type" : "string" },
-	  { "name" : "Email" , "type" : "string" },
-	  { "name" : "Address" , "type" : "string" }
+      { "name" : "Id" , "type" : ["null","int"], "default" : null  },
+      { "name" : "FirstName" , "type" : ["null","string"], "default" : null  },
+	  { "name" : "LastName" , "type" : ["null","string"], "default" : null  },
+      { "name" : "Age" , "type" : ["null","int"], "default" : null  },
+	  { "name" : "City" , "type" : ["null","string"], "default" : null  },
+	  { "name" : "Email" , "type" : ["null","string"], "default" : null  },
+	  { "name" : "Address" , "type" : ["null","string"], "default" : null  }
 	  
    ]
 }
