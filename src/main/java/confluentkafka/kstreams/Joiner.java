@@ -17,6 +17,9 @@ public class Joiner implements ValueJoiner<Customer, InputCustomer, UpdatedCusto
 	            .setLastName(value2.getLastName())
 	            .setAge(value1.getAge())
 	            .setCity(value1.getCity())
+	            .setAddress(value2.getAddress())
+	            .setEmail(value2.getEmail())
+	            .setId(value1.getId())
 	            .build();
 	}
 
