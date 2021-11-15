@@ -58,7 +58,7 @@ public class KStreamApp {
         	String compactedTopic = null;
         	
         	
- 	      // props.put(StreamsConfig.DEFAULT_KEY_SERDE_CLASS_CONFIG, Serdes.String().getClass());
+ 	      // props.put(StreamsConfig.DEFAULT_KEY_SERDE_CLASS_CONFIG, Serdes.String().getClass()); // magic byte problem
          //  props.put(StreamsConfig.DEFAULT_VALUE_SERDE_CLASS_CONFIG, SpecificAvroSerde.class);
            
            props.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG,
@@ -86,11 +86,11 @@ public class KStreamApp {
             if(allConfig.getProperty("schemaregistry")!= null && !allConfig.getProperty("schemaregistry").isBlank()) {
             	props.put("schema.registry.url", allConfig.getProperty("schemaregistry"));// Schema Registry URL
             	props.put(KafkaAvroDeserializerConfig.SCHEMA_REGISTRY_URL_CONFIG , allConfig.getProperty("schemaregistry"));
-            	
+            	//map with 1 prop SR url need to be set in each serde.. hence it was giving SR is null error .
             	Map<String, String> serdeConfig=Collections.singletonMap(AbstractKafkaAvroSerDeConfig.SCHEMA_REGISTRY_URL_CONFIG, allConfig.getProperty("schemaregistry"));
             	customerSerde.configure(serdeConfig, false);
             	inputCustomerSerde.configure(serdeConfig, false);
-            	updatedCustomerSerde.configure(serdeConfig, false);
+            	updatedCustomerSerde.configure(serdeConfig, false); //join of raw and compacted
             	
             }
             	
@@ -132,10 +132,11 @@ public class KStreamApp {
         }
         final StreamsBuilder builder = new StreamsBuilder();
        
-        KStream<String, Customer> source = builder.stream(inputTopic,Consumed.with(Serdes.String(), customerSerde));
-        KTable<String, InputCustomer> tble = builder.table(compactedTopic, Consumed.with(Serdes.String(), inputCustomerSerde));
+        KStream<String, Customer> source = builder.stream(inputTopic,Consumed.with(Serdes.String(), customerSerde)); // raw topic  topic /key / value
+        KTable<String, InputCustomer> tble = builder.table(compactedTopic, Consumed.with(Serdes.String(), inputCustomerSerde)); // compacted topic
         System.out.println("Building Kstream and Ktable");
         @SuppressWarnings("unchecked") // can we check type of datatype for al fields?
+		// /branch in two array -> namrata / except namrata (exception topic )
 		KStream<String, Customer>[] branch = source
         		 .branch((key, appearance) -> (appearance.getName().equalsIgnoreCase("Namrata")),
                          (key, appearance) -> (!appearance.getName().equalsIgnoreCase("Namrata")));
@@ -144,23 +145,23 @@ public class KStreamApp {
        // KStream<String, Customer>[] branched = branch[0].branch((key, appearance) -> (tble.filter((key1, appearance1) -> appearance1.getId().equals(appearance.getId())).));
 
       
-      // branch[1].to(exceptionTopic);
-       branch[1].to(exceptionTopic, Produced.with(Serdes.String(), customerSerde));
+      // branch[1].to(exceptionTopic); // can checnage and insert in compacted if needed .
+       branch[1].to(exceptionTopic, Produced.with(Serdes.String(), customerSerde)); //seraialise
        System.out.println("Sending data to exception topic");
         
         
        // KStream<String, UpdatedCustomer> dest = branch[0].mapValues(v->transformEvents(v));
        
        
-       final Joiner joiner = new Joiner();
+       final Joiner joiner = new Joiner(); // to join raw (kctesm) and compacted topic (ktable)
        System.out.println("Joining valid data and Ktable data");
        KStream<String, UpdatedCustomer> dest = branch[0].join(tble, joiner);
        
     
-        dest.print(Printed.toSysOut());
+        dest.print(Printed.toSysOut()); //print data
         System.out.println("Sending updated data to output topic");
        // dest.to(outputTopic); // do we need to uncomment for writing data to output tiopic?
-        dest.to(outputTopic, Produced.with(Serdes.String(), updatedCustomerSerde));
+        dest.to(outputTopic, Produced.with(Serdes.String(), updatedCustomerSerde)); // updatedCustomerSerde serde of joined data
 
 
         final Topology topology = builder.build();
@@ -289,8 +290,8 @@ public class KStreamApp {
 	        
 	        
 	        
-	        ArrayList<ProducerRecord<String,Customer>> producerRecord = new ArrayList< ProducerRecord<String,Customer>>();
-	        ArrayList<ProducerRecord<String,InputCustomer>> compactedProducerRecord = new ArrayList< ProducerRecord<String,InputCustomer>>();
+	        ArrayList<ProducerRecord<String,Customer>> producerRecord = new ArrayList< ProducerRecord<String,Customer>>(); //raw topic
+	        ArrayList<ProducerRecord<String,InputCustomer>> compactedProducerRecord = new ArrayList< ProducerRecord<String,InputCustomer>>(); //compacted topic
 	     
 	        allConfig.stringPropertyNames().parallelStream().filter(x->x.startsWith("data.raw.valid")).forEach( y ->{
 	        	String value = allConfig.getProperty(y);
@@ -301,7 +302,7 @@ public class KStreamApp {
 	        	 String k = otherprop.get("rawKey");
 	        	 String out = otherprop.get("outputTopic");
 	        	 if(null!=k) {
-	 	        	
+	 	        	// setting the key
 	 	        	if(k.contains("name")) {
 	 	        		System.out.println("Key to be provided for valid raw is -> "+k);
 	 	        		producerRecord.add(new ProducerRecord<>(out,data.getName(), data));
@@ -328,7 +329,7 @@ public class KStreamApp {
 	        	 String out = otherprop.get("outputTopic");
 	        	 
 	        	 if(null!=k) {
-		 	        	
+		 	        	// setting the key for the message
 		 	        	if(k.contains("name")) {
 		 	        		System.out.println("Key to be provided for invalid raw is -> "+k);
 		 	        		producerRecord.add(new ProducerRecord<>(out,data.getName(), data));
@@ -349,10 +350,12 @@ public class KStreamApp {
 	        	String value = allConfig.getProperty(y);
 	        	System.out.println("Building data and record for " + y);
 	        	String att [] = value.split(",");
+	        	// setting the InputCustomer record value Input ciustmer is POJO for compaced topic
 	        	InputCustomer data = InputCustomer.newBuilder().setId(Integer.valueOf(att[0])).setFirstName(att[1]).setLastName(att[2]).setAddress(att[3]).setEmail(att[4]).setLevel(att[5]).build();
 	        	String k = otherprop.get("key");
 	        	String out = otherprop.get("compactedTopic");
 	        	 if(null!=k) {
+					 // setting the InputCustomer record key
 	 	        	System.out.println("Key to be provided for compacted is -> "+k);
 	 	        	if(k.contains("name")) {
 	 	        		System.out.println("setting key as firstname");
@@ -390,8 +393,8 @@ public class KStreamApp {
 	        
 	        
 	        
-	        KafkaProducer<String,Customer> producer = new KafkaProducer<>(properties, Serdes.String().serializer(), customerSerde.serializer());
-	        KafkaProducer<String,InputCustomer> compactedProducer = new KafkaProducer<>(properties, Serdes.String().serializer(), inputCustomerSerde.serializer());
+	        KafkaProducer<String,Customer> producer = new KafkaProducer<>(properties, Serdes.String().serializer(), customerSerde.serializer()); // raw topic
+	        KafkaProducer<String,InputCustomer> compactedProducer = new KafkaProducer<>(properties, Serdes.String().serializer(), inputCustomerSerde.serializer()); // compacted topic
 	       	        
 	        try {
 	        	
@@ -446,7 +449,7 @@ public class KStreamApp {
 	
         }
     }
-    
+    //not used
     public static UpdatedCustomer transformEvents(Customer customer){
    
 
