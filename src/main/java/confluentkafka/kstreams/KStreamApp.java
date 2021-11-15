@@ -137,8 +137,8 @@ public class KStreamApp {
         System.out.println("Building Kstream and Ktable");
         @SuppressWarnings("unchecked") // can we check type of datatype for al fields?
 		KStream<String, Customer>[] branch = source
-        		 .branch((key, appearance) -> (appearance.getName().equalsIgnoreCase("Namrata")),
-                         (key, appearance) -> (!appearance.getName().equalsIgnoreCase("Namrata")));
+        		 .branch((key, appearance) -> (!appearance.getName().equalsIgnoreCase("Aishwarya")),
+                         (key, appearance) -> (appearance.getName().equalsIgnoreCase("Aishwarya")));
         
         
        // KStream<String, Customer>[] branched = branch[0].branch((key, appearance) -> (tble.filter((key1, appearance1) -> appearance1.getId().equals(appearance.getId())).));
