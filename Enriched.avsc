@@ -1,0 +1,71 @@
+{
+ "type": "record",
+ "name": "Enriched",
+ "namespace": "java.confluentkafka.kstreams",
+ "fields": [
+  {
+   "name": "partyID",
+   "type": {
+    "type": "int",
+    "logicalType": "INTEGER"
+   },
+   "default": 0
+  },
+  {
+   "name": "birth_date",
+   "type": {
+    "type": "string",
+    "logicalType": "CHARACTER",
+    "length": 8
+   },
+   "default": ""
+  },
+  {
+   "name": "initials",
+   "type": {
+    "type": "string",
+    "logicalType": "VARCHAR",
+    "length": 80
+   },
+   "default": ""
+  },
+  {
+   "name": "forename",
+   "type": {
+    "type": "string",
+    "logicalType": "CHARACTER",
+    "length": 80
+   },
+   "default": ""
+  },
+  {
+   "name": "surname",
+   "type": {
+    "type": "string",
+    "logicalType": "VARCHAR",
+    "length": 80
+   },
+   "default": ""
+  },
+  {
+   "name": "addressCareOfName",
+   "type": {
+    "type": "string",
+    "logicalType": "VARCHAR",
+    "length": 60
+   },
+   "doc": "",
+   "default": ""
+  },
+  {
+   "name": "partyAddress",
+   "type": {
+    "type": "string",
+    "logicalType": "VARCHAR",
+    "length": 160
+   },
+   "doc": "",
+   "default": ""
+  }
+ ]
+}
