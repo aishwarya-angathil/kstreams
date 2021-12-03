@@ -1,0 +1,87 @@
+{
+ "type": "record",
+ "name": "Party",
+ "namespace": "java.confluentkafka.kstreams",
+ "fields": [
+  {
+   "name": "partyID",
+   "type": {
+    "type": "int",
+    "logicalType": "INTEGER"
+   },
+   "default": 0
+  },
+  {
+   "name": "birth_date",
+   "type": {
+    "type": "string",
+    "logicalType": "CHARACTER",
+    "length": 8
+   },
+   "default": ""
+  },
+  {
+   "name": "partyIndicator",
+   "type": {
+    "type": "string",
+    "logicalType": "CHARACTER",
+    "length": 1
+   },
+   "default": ""
+  },
+  {
+   "name": "firstInitial",
+   "type": {
+    "type": "string",
+    "logicalType": "CHARACTER",
+    "length": 1
+   },
+   "default": ""
+  },
+  {
+   "name": "secondInitial",
+   "type": {
+    "type": "string",
+    "logicalType": "CHARACTER",
+    "length": 1
+   },
+   "default": ""
+  },
+  {
+   "name": "thirdInitial",
+   "type": {
+    "type": "string",
+    "logicalType": "CHARACTER",
+    "length": 1
+   },
+   "default": ""
+  },
+  {
+   "name": "firstForename",
+   "type": {
+    "type": "string",
+    "logicalType": "CHARACTER",
+    "length": 30
+   },
+   "default": ""
+  },
+  {
+   "name": "secondForename",
+   "type": {
+    "type": "string",
+    "logicalType": "CHARACTER",
+    "length": 30
+   },
+   "default": ""
+  },
+  {
+   "name": "surname",
+   "type": {
+    "type": "string",
+    "logicalType": "VARCHAR",
+    "length": 80
+   },
+   "default": ""
+  }
+ ]
+}
