@@ -1,7 +1,7 @@
 {
  "type": "record",
- "name": "ADDRESS",
- "namespace": "java.confluentkafka.kstreams",
+ "name": "Address",
+ "namespace": "java.confluentkafka.kstreams.avro",
  "fields": [
   {
    "name": "partyID",
