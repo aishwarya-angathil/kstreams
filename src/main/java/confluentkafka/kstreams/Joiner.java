@@ -1,9 +1,9 @@
 package confluentkafka.kstreams;
 
 
-import java.confluentkafka.kstreams.avro.Address;
-import java.confluentkafka.kstreams.avro.Enriched;
-import java.confluentkafka.kstreams.avro.Party;
+import com.training.Address;
+import com.training.Enriched;
+import com.training.Party;
 
 import org.apache.kafka.streams.kstream.ValueJoiner;
 

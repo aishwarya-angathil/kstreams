@@ -25,9 +25,9 @@ import io.confluent.kafka.serializers.AbstractKafkaAvroSerDeConfig;
 import io.confluent.kafka.serializers.KafkaAvroDeserializerConfig;
 import io.confluent.kafka.streams.serdes.avro.SpecificAvroSerde;
 
-import java.confluentkafka.kstreams.avro.Address;
-import java.confluentkafka.kstreams.avro.Enriched;
-import java.confluentkafka.kstreams.avro.Party;
+import com.training.Address;
+import com.training.Enriched;
+import com.training.Party;
 import java.io.FileInputStream;
 import java.io.InputStream;
 import java.util.ArrayList;
@@ -38,6 +38,7 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 
 public class KStreamApp {
 	static Properties allConfig = new Properties();
@@ -357,6 +358,7 @@ public class KStreamApp {
 	        		System.out.println("Sending data to raw topic");
 	        		producerRecord.forEach(x -> {
 	        			producer.send(x);
+	        		
 		        	});
 	        	  i++;
 	        	}

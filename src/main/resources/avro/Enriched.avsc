@@ -1,7 +1,7 @@
 {
  "type": "record",
  "name": "Enriched",
- "namespace": "java.confluentkafka.kstreams.avro",
+ "namespace": "com.training",
  "fields": [
   {
    "name": "partyID",
