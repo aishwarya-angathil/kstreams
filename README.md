@@ -16,20 +16,20 @@ Command to run the jar file :
 
 Producer :
 
-java -jar kstreams-0.0.1-SNAPSHOT-jar-with-dependencies dev.properties P
+java -jar kstreams-0.0.1-SNAPSHOT-jar-with-dependencies.jar dev.properties P
 
 
 Compacted Producer Insert :
 
-java -jar kstreams-0.0.1-SNAPSHOT-jar-with-dependencies dev.properties CP I
+java -jar kstreams-0.0.1-SNAPSHOT-jar-with-dependencies.jar dev.properties CP I
 
 
 Compacted Producer Update :
 
-java -jar kstreams-0.0.1-SNAPSHOT-jar-with-dependencies dev.properties CP U
+java -jar kstreams-0.0.1-SNAPSHOT-jar-with-dependencies.jar dev.properties CP U
 
 
 Consumer :
 
-java -jar kstreams-0.0.1-SNAPSHOT-jar-with-dependencies dev.properties C
+java -jar kstreams-0.0.1-SNAPSHOT-jar-with-dependencies.jar dev.properties C
 
