@@ -22,9 +22,15 @@
     </appender>  
   
     <root>  
-        <level value="DEBUG" />  
+        <level value="ALL" />  
         <appender-ref ref="console" />  
         <appender-ref ref="file" />  
-    </root>  
+    </root> 
+    
+    <logger name="confluentkafka.kstreams.KstreamApp" level="ALL"/>
+    <logger name="org.apache.kafka.streams.KafkaStreams" level="ALL"/>
+     <logger name="confluentkafka.kstreams.Joiner" level="ALL"/>
+     <logger name="org.apache.kafka.*" level="ALL"/>
+    
   
 </log4j:configuration> 

@@ -16,6 +16,7 @@ import org.apache.kafka.streams.kstream.KStream;
 import org.apache.kafka.streams.kstream.KTable;
 import org.apache.kafka.streams.kstream.Printed;
 import org.apache.kafka.streams.kstream.Produced;
+import org.apache.log4j.Logger;
 
 //import com.training.Customer;
 //import com.training.InputCustomer;
@@ -41,6 +42,8 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
 public class KStreamApp {
+	
+	 static Logger logger = Logger.getLogger(KStreamApp.class);
 	static Properties allConfig = new Properties();
     public static void main(String[] args) throws Exception {
     	System.out.println("KStreamApp started main method");
@@ -159,17 +162,20 @@ public class KStreamApp {
         System.out.println("Building Kstream and Ktable");
         @SuppressWarnings("unchecked") // can we check type of datatype for al fields?
         //KStream<String, Customer>[] branch = source
+        
+        
         KStream<String, Party>[] branch = source
         		 .branch((key, appearance) -> (!appearance.getFirstForename().equalsIgnoreCase("Aishwarya")),
                          (key, appearance) -> (appearance.getFirstForename().equalsIgnoreCase("Aishwarya")));
         
         
        // KStream<String, Customer>[] branched = branch[0].branch((key, appearance) -> (tble.filter((key1, appearance1) -> appearance1.getId().equals(appearance.getId())).));
-
+logger.debug(branch.length +" branch entries ");
       
       // branch[1].to(exceptionTopic);  // can checnage and insert in compacted if needed .
       //  branch[1].to(exceptionTopic, Produced.with(Serdes.String(), customerSerde)); //serialize
         branch[1].to(exceptionTopic, Produced.with(Serdes.String(), partySerde)); //serialize
+        logger.debug("Exception  -->"+branch[1]);
        System.out.println("Sending data to exception topic");
         
         
@@ -183,6 +189,7 @@ public class KStreamApp {
        
     
         dest.print(Printed.toSysOut());//print data
+        logger.debug("Valid -->"+dest);
         System.out.println("Sending updated data to output topic");
        // dest.to(outputTopic); // do we need to uncomment for writing data to output tiopic?
        // dest.to(outputTopic, Produced.with(Serdes.String(), updatedCustomerSerde)); // updatedCustomerSerde serde of joined data
@@ -203,6 +210,7 @@ public class KStreamApp {
         });
 
         try {
+        	logger.debug("Starting Consumer");
             streams.start();
             latch.await();
         } catch (Throwable e) {
@@ -342,7 +350,7 @@ public class KStreamApp {
 		
 	     // construct kafka producer.
 	        
-	        System.out.println("Creating producers for raw and compacted topic");
+	        System.out.println("Creating producers for raw topic");
 	        
 	        //KafkaProducer<String,Customer> producer = new KafkaProducer<String,Customer>(properties);
 	        //KafkaProducer<String,InputCustomer> compactedProducer = new KafkaProducer<String,InputCustomer>(properties);
@@ -356,7 +364,9 @@ public class KStreamApp {
 	        	int i = 0;
 	        	while(i<messagesCount) {
 	        		System.out.println("Sending data to raw topic");
+	        		logger.debug("Total records to be sent to raw topic ->"+producerRecord.size());
 	        		producerRecord.forEach(x -> {
+	        			logger.debug("Data raw to be sent -->"+x);
 	        			producer.send(x);
 	        		
 		        	});
@@ -539,7 +549,7 @@ public class KStreamApp {
 		
 	     // construct kafka producer.
 	        
-	        System.out.println("Creating producers for raw and compacted topic");
+	        System.out.println("Creating producers for  compacted topic");
 	        
 	        //KafkaProducer<String,Customer> producer = new KafkaProducer<String,Customer>(properties);
 	        //KafkaProducer<String,InputCustomer> compactedProducer = new KafkaProducer<String,InputCustomer>(properties);
@@ -551,7 +561,9 @@ public class KStreamApp {
 	        try {
 	        	
 	        	System.out.println("Sending data to compacted topic");
+	        	logger.debug("Total records to be sent to raw topic ->"+compactedProducerRecord.size());
 	        	compactedProducerRecord.forEach(x -> {
+	        		logger.debug("Data compacted to be sent -->"+x);
 	        		compactedProducer.send(x);
 	        	});
 	        	
