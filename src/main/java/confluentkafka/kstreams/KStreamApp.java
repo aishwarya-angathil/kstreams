@@ -39,6 +39,8 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
 public class KStreamApp {
@@ -46,17 +48,19 @@ public class KStreamApp {
 	 static Logger logger = Logger.getLogger(KStreamApp.class);
 	static Properties allConfig = new Properties();
     public static void main(String[] args) throws Exception {
-    	System.out.println("KStreamApp started main method");
+     final ScheduledExecutorService schedulerToSendMessage = Executors.newScheduledThreadPool(1);
+
+     logger.debug("KStreamApp started main method");
         
         if(args.length>0) {
-        	System.out.println("Args passed ->"+args.length);
-        	System.out.println ( "Loading property file  ->"+args[0]);
+        	logger.debug("Args passed ->"+args.length);
+        	logger.debug( "Loading property file  ->"+args[0]);
         	InputStream inputConf = new FileInputStream(args[0]);
         	allConfig.load(inputConf);
         }
         
         if(args[1].equalsIgnoreCase("C")) {
-        	System.out.println("Setting consumer because args ->"+args[1]);
+        	logger.debug("Setting consumer because args ->"+args[1]);
         	Properties props = new Properties();
         	
         	String inputTopic=null;
@@ -87,7 +91,7 @@ public class KStreamApp {
 	        SpecificAvroSerde<Enriched> enrichedSerde = new SpecificAvroSerde<Enriched>();
 	        
 	        if(!allConfig.isEmpty()) {
-        	System.out.println("Setting consumer properties from prop file");
+	        	logger.debug("Setting consumer properties from prop file");
         	if(allConfig.getProperty("app")!=null && !allConfig.getProperty("app").isBlank() )
         		props.put(StreamsConfig.APPLICATION_ID_CONFIG, allConfig.getProperty("app"));
         	
@@ -129,7 +133,7 @@ public class KStreamApp {
         	 compactedTopic = allConfig.getProperty("compactedTopic");
 
         }else {
-        	System.out.println("Setting default consumer properties ");
+        	logger.debug("Setting default consumer properties ");
         props.put(StreamsConfig.APPLICATION_ID_CONFIG, "streams-t0618");
         props.put(StreamsConfig.BOOTSTRAP_SERVERS_CONFIG, "kafka:9071"); // confluent Bootstrap Servers
         
@@ -159,7 +163,7 @@ public class KStreamApp {
         KTable<String, Address> tble = builder.table(compactedTopic, Consumed.with(Serdes.String(), addressSerde)); // compacted topic
       
         
-        System.out.println("Building Kstream and Ktable");
+        logger.debug("Building Kstream and Ktable");
         @SuppressWarnings("unchecked") // can we check type of datatype for al fields?
         //KStream<String, Customer>[] branch = source
         
@@ -176,21 +180,21 @@ logger.debug(branch.length +" branch entries ");
       //  branch[1].to(exceptionTopic, Produced.with(Serdes.String(), customerSerde)); //serialize
         branch[1].to(exceptionTopic, Produced.with(Serdes.String(), partySerde)); //serialize
         logger.debug("Exception  -->"+branch[1]);
-       System.out.println("Sending data to exception topic");
+        logger.debug("Sending data to exception topic");
         
         
        // KStream<String, UpdatedCustomer> dest = branch[0].mapValues(v->transformEvents(v));
        
        
        final Joiner joiner = new Joiner();  // to join raw (kctesm) and compacted topic (ktable)
-       System.out.println("Joining valid data and Ktable data");
+       logger.debug("Joining valid data and Ktable data");
     //   KStream<String, UpdatedCustomer> dest = branch[0].join(tble, joiner);
        KStream<String, Enriched> dest = branch[0].join(tble, joiner);
        
     
         dest.print(Printed.toSysOut());//print data
         logger.debug("Valid -->"+dest);
-        System.out.println("Sending updated data to output topic");
+        logger.debug("Sending updated data to output topic");
        // dest.to(outputTopic); // do we need to uncomment for writing data to output tiopic?
        // dest.to(outputTopic, Produced.with(Serdes.String(), updatedCustomerSerde)); // updatedCustomerSerde serde of joined data
         dest.to(outputTopic, Produced.with(Serdes.String(), enrichedSerde)); 
@@ -222,8 +226,16 @@ logger.debug(branch.length +" branch entries ");
       // Producer
         
         if(args[1].equals("P")) {
+        	int delay =2;
+        	int period = 2;
+        	
+        	if(null!=args[2])
+        		delay = Integer.valueOf(args[2]);
+        	if(null!=args[3])
+        		period = Integer.valueOf(args[3]);
+        		
 
-        	System.out.println("Setting producer because args ->"+args[1]);
+        	logger.debug("Setting producer because args ->"+args[1]);
 	        Properties properties = new Properties();
 	        // normal producer
 	       
@@ -244,7 +256,7 @@ logger.debug(branch.length +" branch entries ");
 	        HashMap<String, String > otherprop = new HashMap<>();
 	        
 	        if(!allConfig.isEmpty()) {
-	        	System.out.println("Setting producer properties from prop file");
+	        	logger.debug("Setting producer properties from prop file");
 	        	if(allConfig.getProperty("app")!=null && !allConfig.getProperty("app").isBlank())
 	        	properties.put(StreamsConfig.APPLICATION_ID_CONFIG, allConfig.getProperty("app")+"producer");
 	        	
@@ -284,7 +296,7 @@ logger.debug(branch.length +" branch entries ");
 
 	        }else {
 	        	
-	        	System.out.println("Setting default producer properties");
+	        	logger.debug("Setting default producer properties");
 	        	properties.put(StreamsConfig.APPLICATION_ID_CONFIG, "streams-t0618producer");
 	        	properties.put(StreamsConfig.BOOTSTRAP_SERVERS_CONFIG, "kafka:9071"); // confluent Bootstrap Servers
 	        	properties.put("schema.registry.url", "http://schemaregistry:8081");// Schema Registry URL
@@ -311,7 +323,7 @@ logger.debug(branch.length +" branch entries ");
 			 * Customer.put("Name", "Eric"); Customer.put("Age", 65); Customer.put("City",
 			 * "Mumbai");
 			 */
-	        System.out.println("Creating data for raw and compacted topic");
+	        logger.debug("Creating data for raw and compacted topic");
 	        
 	        
 	        
@@ -320,7 +332,7 @@ logger.debug(branch.length +" branch entries ");
 	     
 	        allConfig.stringPropertyNames().parallelStream().filter(x->x.startsWith("data.raw")).forEach( y ->{
 	        	String value = allConfig.getProperty(y);
-	        	System.out.println("Building data and record for " + y);
+	        	logger.debug("Building data and record for " + y);
 	        	String att [] = value.split(",");
 	        //	 Customer data = Customer.newBuilder().setId(Integer.valueOf(att[0])).setName(att[1]).setAge(Integer.valueOf(att[2])).setCity(att[3]).build();
 	        	Party data = Party.newBuilder().setPartyID(Integer.valueOf(att[0])).setFirstForename(att[1]).setSecondForename(att[2]).setSurname(att[3]).setFirstInitial(att[4]).setSecondInitial(att[5]).setThirdInitial(att[6]).setPartyIndicator(att[7]).setBirthDate(att[8]).build();
@@ -329,18 +341,18 @@ logger.debug(branch.length +" branch entries ");
 	        	 if(null!=k) {
 	        		// setting the key
 	 	        	if(k.contains("name")) {
-	 	        		System.out.println("Key to be provided for valid raw is -> "+k);
+	 	        		logger.debug("Key to be provided for valid raw is -> "+k);
 	 	        		producerRecord.add(new ProducerRecord<>(out,data.getFirstForename(), data));
 	 	        	}
 	 	        	else if(k.contains("id")) {
-	 	        		System.out.println("Key to be provided for valid RAW is -> "+k);
+	 	        		logger.debug("Key to be provided for valid RAW is -> "+k);
 	 	        		producerRecord.add(new ProducerRecord<>(out,String.valueOf(data.getPartyID()), data));
 	 	        	}else {
-	 	        		System.out.println("No key has been set for valid RAW as the value doesnt match name or id");
+	 	        		logger.debug("No key has been set for valid RAW as the value doesnt match name or id");
 	 	        		producerRecord.add(new ProducerRecord<>(out, data));
 	 	        	}
 	 	        }else {
-	 	        	System.out.println("No key set for valid RAW as key is null");
+	 	        	logger.debug("No key set for valid RAW as key is null");
 	 	        	producerRecord.add(new ProducerRecord<>(out, data));
 	 	        }
 	        });
@@ -350,7 +362,7 @@ logger.debug(branch.length +" branch entries ");
 		
 	     // construct kafka producer.
 	        
-	        System.out.println("Creating producers for raw topic");
+	        logger.debug("Creating producers for raw topic");
 	        
 	        //KafkaProducer<String,Customer> producer = new KafkaProducer<String,Customer>(properties);
 	        //KafkaProducer<String,InputCustomer> compactedProducer = new KafkaProducer<String,InputCustomer>(properties);
@@ -360,24 +372,14 @@ logger.debug(branch.length +" branch entries ");
 	      
 	       	        
 	        try {
+	        	schedulerToSendMessage.scheduleAtFixedRate(new Messager(producerRecord,producer,null,null,messagesCount), delay, period, TimeUnit.MINUTES);
 	        	
-	        	int i = 0;
-	        	while(i<messagesCount) {
-	        		System.out.println("Sending data to raw topic");
-	        		logger.debug("Total records to be sent to raw topic ->"+producerRecord.size());
-	        		producerRecord.forEach(x -> {
-	        			logger.debug("Data raw to be sent -->"+x);
-	        			producer.send(x);
-	        		
-		        	});
-	        	  i++;
-	        	}
 	        	} catch(SerializationException e) {
 	        	  // may need to do something with it
-	        		System.out.println("Execption Found in Producer "+e.getMessage());
+	        		logger.debug("Exception Found in Producer "+e.getMessage());
 	        		e.printStackTrace();
 	        	}catch (Exception e1) {
-	        		System.out.println("Execption Found in Producer "+e1.getMessage());
+	        		System.out.println("Exception Found in Producer "+e1.getMessage());
 	        		e1.printStackTrace();
 	        	}
 	        	// When you're finished producing records, you can flush the producer to ensure it has all been written to Kafka and
@@ -386,16 +388,16 @@ logger.debug(branch.length +" branch entries ");
 	        		
 	        		try {
 	        			
-	        	  System.out.println("Closing serdes");
+	        			logger.debug("Closing serdes");
 	  	        	//  customerSerde.close();
 	        	  partySerde.close();
-	        	  System.out.println("Flushing and closing producer");
+	        	  logger.debug("Flushing and closing producer");
 	        	  producer.flush();
 	        	  producer.close();
 	        	  
-	        	  System.out.println("Flushing and closing complete ");
+	        	  logger.debug("Flushing and closing complete ");
 	        		}catch(Exception e) {
-	        			System.out.println("Execption Found in Producer Finally "+e.getMessage());
+	        			logger.debug("Exception Found in Producer Finally "+e.getMessage());
 		        		e.printStackTrace();
 	        		}
 	        	}
@@ -406,10 +408,18 @@ logger.debug(branch.length +" branch entries ");
 // Compacted Producer
         
         if(args[1].equals("CP")) {
+        	int delay =2;
+        	int period = 2;
+        	
+        	if(null!=args[3])
+        		delay = Integer.valueOf(args[3]);
+        	if(null!=args[4])
+        		period = Integer.valueOf(args[4]);
+        		
 
-        	System.out.println("Setting compacted producer because args ->"+args[1]);
+        	logger.debug("Setting compacted producer because args ->"+args[1]);
         	if(args.length!=3) {
-        		System.out.println("Please pass 3rd argument as I or U . I for Insert and U for Update");
+        		logger.debug("Please pass 3rd argument as I or U . I for Insert and U for Update");
         		System.exit(1);
         	}
 	        Properties properties = new Properties();
@@ -430,7 +440,7 @@ logger.debug(branch.length +" branch entries ");
 	        HashMap<String, String > otherprop = new HashMap<>();
 	        
 	        if(!allConfig.isEmpty()) {
-	        	System.out.println("Setting producer properties from prop file");
+	        	logger.debug("Setting producer properties from prop file");
 	        	if(allConfig.getProperty("app")!=null && !allConfig.getProperty("app").isBlank())
 	        	properties.put(StreamsConfig.APPLICATION_ID_CONFIG, allConfig.getProperty("app")+"producer");
 	        	
@@ -470,7 +480,7 @@ logger.debug(branch.length +" branch entries ");
 
 	        }else {
 	        	
-	        	System.out.println("Setting default producer properties");
+	        	logger.debug("Setting default producer properties");
 	        	properties.put(StreamsConfig.APPLICATION_ID_CONFIG, "streams-t0618producer");
 	        	properties.put(StreamsConfig.BOOTSTRAP_SERVERS_CONFIG, "kafka:9071"); // confluent Bootstrap Servers
 	        	properties.put("schema.registry.url", "http://schemaregistry:8081");// Schema Registry URL
@@ -498,7 +508,7 @@ logger.debug(branch.length +" branch entries ");
 			 * Customer.put("Name", "Eric"); Customer.put("Age", 65); Customer.put("City",
 			 * "Mumbai");
 			 */
-	        System.out.println("Creating data for raw and compacted topic");
+	        logger.debug("Creating data for  compacted topic");
 	        
 	        
 	        
@@ -506,11 +516,11 @@ logger.debug(branch.length +" branch entries ");
 	    	ArrayList<ProducerRecord<String,Address>> compactedProducerRecord = new ArrayList< ProducerRecord<String,Address>>();
 	        String dataToSearch = args[2];
 	        
-	        System.out.println("Producer will send records starting with property -> "+"data.compacted."+dataToSearch.trim().toLowerCase());
+	        logger.debug("Producer will send records starting with property -> "+"data.compacted."+dataToSearch.trim().toLowerCase());
 	    
 	        allConfig.stringPropertyNames().parallelStream().filter(x->x.startsWith("data.compacted."+dataToSearch.trim().toLowerCase())).forEach( y ->{
 	        	String value = allConfig.getProperty(y);
-	        	System.out.println("Building data and record for " + y);
+	        	logger.debug("Building data and record for " + y);
 	        	String att [] = value.split(",");
 	        	// setting the InputCustomer record value Input customer is POJO for compaced topic
 	        	//InputCustomer data = InputCustomer.newBuilder().setId(Integer.valueOf(att[0])).setFirstName(att[1]).setLastName(att[2]).setAddress(att[3]).setEmail(att[4]).setLevel(att[5]).build();
@@ -520,27 +530,27 @@ logger.debug(branch.length +" branch entries ");
 	        	String out = otherprop.get("compactedTopic");
 	        	 if(null!=k) {
 	        		// setting the InputCustomer record key
-	 	        	System.out.println("Key to be provided for compacted is -> "+k);
+	        		 logger.debug("Key to be provided for compacted is -> "+k);
 	 	        	if(k.contains("name")) {
-	 	        		System.out.println("setting key as firstname");
+	 	        		logger.debug("setting key as firstname");
 	 	        		compactedProducerRecord.add(new ProducerRecord<>(out, data.getAddressCareOfName(),data));
 	 			      }
 	 	        	else if(k.contains("id")) {
 	 	        		
-	 	        		System.out.println("Key to be provided for compacted is -> "+k);
+	 	        		logger.debug("Key to be provided for compacted is -> "+k);
 	 	        		compactedProducerRecord.add(new ProducerRecord<>(out, String.valueOf(data.getPartyID()),data));
 	 			          
 	 			      }
 	 	        	
 	 	        	else {
 	 	        		
-	 	        		System.out.println("No key has been set as the value doesnt match name or id for compacted");
+	 	        		logger.debug("No key has been set as the value doesnt match name or id for compacted");
 	 	        		compactedProducerRecord.add(new ProducerRecord<>(out, data));
 	 	        		
 	 			
 	 	        	}
 	 	        }else {
-	 	        	System.out.println("No key set for compacted as key is null");
+	 	        	logger.debug("No key set for compacted as key is null");
 	 	        	compactedProducerRecord.add(new ProducerRecord<>(out, data));
 	        	}
 
@@ -549,7 +559,7 @@ logger.debug(branch.length +" branch entries ");
 		
 	     // construct kafka producer.
 	        
-	        System.out.println("Creating producers for  compacted topic");
+	        logger.debug("Creating producers for  compacted topic");
 	        
 	        //KafkaProducer<String,Customer> producer = new KafkaProducer<String,Customer>(properties);
 	        //KafkaProducer<String,InputCustomer> compactedProducer = new KafkaProducer<String,InputCustomer>(properties);
@@ -560,20 +570,15 @@ logger.debug(branch.length +" branch entries ");
 	       	        
 	        try {
 	        	
-	        	System.out.println("Sending data to compacted topic");
-	        	logger.debug("Total records to be sent to raw topic ->"+compactedProducerRecord.size());
-	        	compactedProducerRecord.forEach(x -> {
-	        		logger.debug("Data compacted to be sent -->"+x);
-	        		compactedProducer.send(x);
-	        	});
+	        	schedulerToSendMessage.scheduleAtFixedRate(new Messager(null,null,compactedProducerRecord,compactedProducer,0), delay, period, TimeUnit.MINUTES);
 	        	
 	        	
 	        	} catch(SerializationException e) {
 	        	  // may need to do something with it
-	        		System.out.println("Exception Found in Producer "+e.getMessage());
+	        		logger.debug("Exception Found in Producer "+e.getMessage());
 	        		e.printStackTrace();
 	        	}catch (Exception e1) {
-	        		System.out.println("Exception Found in Producer "+e1.getMessage());
+	        		logger.debug("Exception Found in Producer "+e1.getMessage());
 	        		e1.printStackTrace();
 	        	}
 	        	// When you're finished producing records, you can flush the producer to ensure it has all been written to Kafka and
@@ -582,16 +587,16 @@ logger.debug(branch.length +" branch entries ");
 	        		
 	        		try {
 	        			
-	        	  System.out.println("Closing serdes");
+	        			logger.debug("Closing serdes");
 	        	  //inputCustomerSerde.close();
 	        	  addressSerde.close();
-	        	  System.out.println("Flushing and closing producer");
+	        	  logger.debug("Flushing and closing producer");
 	        	  compactedProducer.flush();
 	        	  compactedProducer.close();
 	        	  
-	        	  System.out.println("Flushing and closing complete ");
+	        	  logger.debug("Flushing and closing complete ");
 	        		}catch(Exception e) {
-	        			System.out.println("Execption Found in Producer Finally "+e.getMessage());
+	        			logger.debug("Execption Found in Producer Finally "+e.getMessage());
 		        		e.printStackTrace();
 	        		}
 	        	}

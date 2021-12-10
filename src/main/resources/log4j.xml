@@ -28,6 +28,7 @@
     </root> 
     
     <logger name="confluentkafka.kstreams.KstreamApp" level="ALL"/>
+     <logger name="confluentkafka.kstreams.Messager" level="ALL"/>
     <logger name="org.apache.kafka.streams.KafkaStreams" level="ALL"/>
      <logger name="confluentkafka.kstreams.Joiner" level="ALL"/>
      <logger name="org.apache.kafka.*" level="ALL"/>

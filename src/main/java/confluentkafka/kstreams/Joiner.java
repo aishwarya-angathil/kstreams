@@ -12,7 +12,6 @@ public class Joiner implements ValueJoiner<Party, Address, Enriched>{
 	 static Logger logger = Logger.getLogger(Joiner.class);
 	public Enriched apply(Party value1, Address value2) {
 		// TODO Auto-generated method stub
-		System.out.println("Joining valid data and Ktable data -> "+value1.getFirstForename()+"  "+value1.getSurname()+" "+value1.getBirthDate()+" "+ value1.getPartyID()+" "+value2.getAddressCareOfName()+" "+value2.getPartyAddress());
 		logger.debug("Joining valid data and Ktable data -> "+value1.getFirstForename()+"  "+value1.getSurname()+" "+value1.getBirthDate()+" "+ value1.getPartyID()+" "+value2.getAddressCareOfName()+" "+value2.getPartyAddress());
 		return Enriched.newBuilder()
 	    		.setForename((null!=value1.getFirstForename() ? value1.getFirstForename():""+" "+null != value1.getSecondForename()? value1.getSecondForename() : "").trim())
