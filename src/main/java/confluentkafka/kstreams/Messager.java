@@ -33,6 +33,8 @@ public class Messager implements Runnable{
 		this.addressSerde = addressSerde;
 		this.properties = properties;
 		this.topic = topic;
+		
+		logger.debug("Creating Messager producerRecords -->"+this.records+" compactedproducerRecords -->"+this.compactedrecords+" partySerd->"+this.partySerde+" addressSerde->"+this.addressSerde+" properties->"+this.properties+" topic->"+this.topic+" count->"+this.count);
 	
 	}
 

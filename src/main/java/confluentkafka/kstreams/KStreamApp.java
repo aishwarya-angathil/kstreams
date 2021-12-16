@@ -554,7 +554,6 @@ logger.debug(branch.length +" branch entries ");
 	       	        
 	        try {
 	        	
-	        	
 	        	schedulerToSendMessage.scheduleAtFixedRate(new Messager(otherprop.get("compactedTopic"),null,compactedProducerRecord,properties,null,addressSerde,0), delay, period, TimeUnit.MINUTES);
 	        	
 	        	} catch(SerializationException e) {
