@@ -368,11 +368,11 @@ logger.debug(branch.length +" branch entries ");
 	        //KafkaProducer<String,InputCustomer> compactedProducer = new KafkaProducer<String,InputCustomer>(properties);
 	        
 	        //KafkaProducer<String,Customer> producer = new KafkaProducer<>(properties, Serdes.String().serializer(), customerSerde.serializer());//raw topic
-	        KafkaProducer<String,Party> producer = new KafkaProducer<>(properties, Serdes.String().serializer(), partySerde.serializer());//raw topic
+	        //KafkaProducer<String,Party> producer = new KafkaProducer<>(properties, Serdes.String().serializer(), partySerde.serializer());//raw topic
 	      
 	       	        
 	        try {
-	        	schedulerToSendMessage.scheduleAtFixedRate(new Messager(producerRecord,producer,null,null,messagesCount), delay, period, TimeUnit.MINUTES);
+	        	schedulerToSendMessage.scheduleAtFixedRate(new Messager(otherprop.get("outputTopic"),producerRecord,null,properties,partySerde,null,messagesCount), delay, period, TimeUnit.MINUTES);
 	        	
 	        	} catch(SerializationException e) {
 	        	  // may need to do something with it
@@ -384,23 +384,7 @@ logger.debug(branch.length +" branch entries ");
 	        	}
 	        	// When you're finished producing records, you can flush the producer to ensure it has all been written to Kafka and
 	        	// then close the producer to free its resources.
-	        	finally {
-	        		
-	        		try {
-	        			
-	        			logger.debug("Closing serdes");
-	  	        	//  customerSerde.close();
-	        	  partySerde.close();
-	        	  logger.debug("Flushing and closing producer");
-	        	  producer.flush();
-	        	  producer.close();
-	        	  
-	        	  logger.debug("Flushing and closing complete ");
-	        		}catch(Exception e) {
-	        			logger.debug("Exception Found in Producer Finally "+e.getMessage());
-		        		e.printStackTrace();
-	        		}
-	        	}
+	        	
 
 	
         }
@@ -418,7 +402,7 @@ logger.debug(branch.length +" branch entries ");
         		
 
         	logger.debug("Setting compacted producer because args ->"+args[1]);
-        	if(args.length!=3) {
+        	if(args.length<3) {
         		logger.debug("Please pass 3rd argument as I or U . I for Insert and U for Update");
         		System.exit(1);
         	}
@@ -566,12 +550,12 @@ logger.debug(branch.length +" branch entries ");
 	     
 	        //KafkaProducer<String,InputCustomer> compactedProducer = new KafkaProducer<>(properties, Serdes.String().serializer(), inputCustomerSerde.serializer()); //compacted topic
 	        
-	        KafkaProducer<String,Address> compactedProducer = new KafkaProducer<>(properties, Serdes.String().serializer(), addressSerde.serializer()); //compacted topic
+	        //KafkaProducer<String,Address> compactedProducer = new KafkaProducer<>(properties, Serdes.String().serializer(), addressSerde.serializer()); //compacted topic
 	       	        
 	        try {
 	        	
-	        	schedulerToSendMessage.scheduleAtFixedRate(new Messager(null,null,compactedProducerRecord,compactedProducer,0), delay, period, TimeUnit.MINUTES);
 	        	
+	        	schedulerToSendMessage.scheduleAtFixedRate(new Messager(otherprop.get("outputTopic"),null,compactedProducerRecord,null,null,addressSerde,0), delay, period, TimeUnit.MINUTES);
 	        	
 	        	} catch(SerializationException e) {
 	        	  // may need to do something with it
@@ -581,26 +565,7 @@ logger.debug(branch.length +" branch entries ");
 	        		logger.debug("Exception Found in Producer "+e1.getMessage());
 	        		e1.printStackTrace();
 	        	}
-	        	// When you're finished producing records, you can flush the producer to ensure it has all been written to Kafka and
-	        	// then close the producer to free its resources.
-	        	finally {
-	        		
-	        		try {
-	        			
-	        			logger.debug("Closing serdes");
-	        	  //inputCustomerSerde.close();
-	        	  addressSerde.close();
-	        	  logger.debug("Flushing and closing producer");
-	        	  compactedProducer.flush();
-	        	  compactedProducer.close();
-	        	  
-	        	  logger.debug("Flushing and closing complete ");
-	        		}catch(Exception e) {
-	        			logger.debug("Execption Found in Producer Finally "+e.getMessage());
-		        		e.printStackTrace();
-	        		}
-	        	}
-
+	        	
 
 	       
 
