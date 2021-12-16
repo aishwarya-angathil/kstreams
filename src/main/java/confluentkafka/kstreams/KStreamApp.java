@@ -426,7 +426,7 @@ logger.debug(branch.length +" branch entries ");
 	        if(!allConfig.isEmpty()) {
 	        	logger.debug("Setting producer properties from prop file");
 	        	if(allConfig.getProperty("app")!=null && !allConfig.getProperty("app").isBlank())
-	        	properties.put(StreamsConfig.APPLICATION_ID_CONFIG, allConfig.getProperty("app")+"producer");
+	        	properties.put(StreamsConfig.APPLICATION_ID_CONFIG, allConfig.getProperty("app")+"compactedproducer");
 	        	
 	        	if(allConfig.getProperty("bootstrap")!=null && !allConfig.getProperty("bootstrap").isBlank())
 	        	properties.put(StreamsConfig.BOOTSTRAP_SERVERS_CONFIG, allConfig.getProperty("bootstrap")); // confluent Bootstrap Servers
@@ -465,7 +465,7 @@ logger.debug(branch.length +" branch entries ");
 	        }else {
 	        	
 	        	logger.debug("Setting default producer properties");
-	        	properties.put(StreamsConfig.APPLICATION_ID_CONFIG, "streams-t0618producer");
+	        	properties.put(StreamsConfig.APPLICATION_ID_CONFIG, "streams-t0618compactedproducer");
 	        	properties.put(StreamsConfig.BOOTSTRAP_SERVERS_CONFIG, "kafka:9071"); // confluent Bootstrap Servers
 	        	properties.put("schema.registry.url", "http://schemaregistry:8081");// Schema Registry URL
 	        	Map<String, String> serdeConfig=Collections.singletonMap(AbstractKafkaAvroSerDeConfig.SCHEMA_REGISTRY_URL_CONFIG, "http://schemaregistry:8081");
@@ -555,7 +555,7 @@ logger.debug(branch.length +" branch entries ");
 	        try {
 	        	
 	        	
-	        	schedulerToSendMessage.scheduleAtFixedRate(new Messager(otherprop.get("outputTopic"),null,compactedProducerRecord,null,null,addressSerde,0), delay, period, TimeUnit.MINUTES);
+	        	schedulerToSendMessage.scheduleAtFixedRate(new Messager(otherprop.get("compactedTopic"),null,compactedProducerRecord,properties,null,addressSerde,0), delay, period, TimeUnit.MINUTES);
 	        	
 	        	} catch(SerializationException e) {
 	        	  // may need to do something with it
