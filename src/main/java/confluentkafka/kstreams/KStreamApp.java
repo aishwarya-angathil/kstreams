@@ -1,7 +1,17 @@
 package confluentkafka.kstreams;
 
+import java.io.InputStream;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Properties;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
+
 import org.apache.kafka.clients.consumer.ConsumerConfig;
-import org.apache.kafka.clients.producer.KafkaProducer;
 import org.apache.kafka.clients.producer.ProducerConfig;
 import org.apache.kafka.clients.producer.ProducerRecord;
 import org.apache.kafka.common.config.SaslConfigs;
@@ -18,6 +28,11 @@ import org.apache.kafka.streams.kstream.Printed;
 import org.apache.kafka.streams.kstream.Produced;
 import org.apache.log4j.Logger;
 
+//import com.sun.org.apache.xml.internal.security.encryption.Serializer;
+/*import com.training.Address;
+import com.training.Enriched;
+import com.training.Party;
+*/
 //import com.training.Customer;
 //import com.training.InputCustomer;
 //import com.training.UpdatedCustomer;
@@ -25,23 +40,6 @@ import org.apache.log4j.Logger;
 import io.confluent.kafka.serializers.AbstractKafkaAvroSerDeConfig;
 import io.confluent.kafka.serializers.KafkaAvroDeserializerConfig;
 import io.confluent.kafka.streams.serdes.avro.SpecificAvroSerde;
-
-import com.training.Address;
-import com.training.Enriched;
-import com.training.Party;
-import java.io.FileInputStream;
-import java.io.InputStream;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Locale;
-import java.util.Map;
-import java.util.Properties;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.TimeUnit;
 
 public class KStreamApp {
 	
@@ -55,7 +53,9 @@ public class KStreamApp {
         if(args.length>0) {
         	logger.debug("Args passed ->"+args.length);
         	logger.debug( "Loading property file  ->"+args[0]);
-        	InputStream inputConf = new FileInputStream(args[0]);
+        	//InputStream inputConf = new FileInputStream(args[0]);
+        	
+        	InputStream inputConf = KStreamApp.class.getClassLoader().getResourceAsStream(args[0]);
         	allConfig.load(inputConf);
         }
         
@@ -92,15 +92,15 @@ public class KStreamApp {
 	        
 	        if(!allConfig.isEmpty()) {
 	        	logger.debug("Setting consumer properties from prop file");
-        	if(allConfig.getProperty("app")!=null && !allConfig.getProperty("app").isBlank() )
+        	if(allConfig.getProperty("app")!=null && !allConfig.getProperty("app").isEmpty() )
         		props.put(StreamsConfig.APPLICATION_ID_CONFIG, allConfig.getProperty("app"));
         	
-        	if(allConfig.getProperty("bootstrap")!=null && !allConfig.getProperty("bootstrap").isBlank())
+        	if(allConfig.getProperty("bootstrap")!=null && !allConfig.getProperty("bootstrap").isEmpty())
         		props.put(StreamsConfig.BOOTSTRAP_SERVERS_CONFIG, allConfig.getProperty("bootstrap")); // confluent Bootstrap Servers
             
         	
             
-            if(allConfig.getProperty("schemaregistry")!= null && !allConfig.getProperty("schemaregistry").isBlank()) {
+            if(allConfig.getProperty("schemaregistry")!= null && !allConfig.getProperty("schemaregistry").isEmpty()) {
             	props.put("schema.registry.url", allConfig.getProperty("schemaregistry"));// Schema Registry URL
             	props.put(KafkaAvroDeserializerConfig.SCHEMA_REGISTRY_URL_CONFIG , allConfig.getProperty("schemaregistry"));
             	//map with 1 prop SR url need to be set in each serde.. hence it was giving SR is null error .
@@ -116,15 +116,15 @@ public class KStreamApp {
             }
             	
             
-            if(allConfig.getProperty("mechanism")!=null && !allConfig.getProperty("mechanism").isBlank())
+            if(allConfig.getProperty("mechanism")!=null && !allConfig.getProperty("mechanism").isEmpty())
             	props.put(SaslConfigs.SASL_MECHANISM, allConfig.getProperty("mechanism"));
             
-            if(allConfig.getProperty("protocol")!=null && !allConfig.getProperty("protocol").isBlank())
+            if(allConfig.getProperty("protocol")!=null && !allConfig.getProperty("protocol").isEmpty())
             	props.put(StreamsConfig.SECURITY_PROTOCOL_CONFIG,allConfig.getProperty("protocol"));
             
-            if(allConfig.getProperty("jaasmodule")!=null &&!allConfig.getProperty("jaasmodule").isBlank() &&
-            		allConfig.getProperty("jaasuser")!=null && !allConfig.getProperty("jaasuser").isBlank() &&
-            		allConfig.getProperty("jaaspwd")!=null && !allConfig.getProperty("jaaspwd").isBlank())
+            if(allConfig.getProperty("jaasmodule")!=null &&!allConfig.getProperty("jaasmodule").isEmpty() &&
+            		allConfig.getProperty("jaasuser")!=null && !allConfig.getProperty("jaasuser").isEmpty() &&
+            		allConfig.getProperty("jaaspwd")!=null && !allConfig.getProperty("jaaspwd").isEmpty())
             			props.put(SaslConfigs.SASL_JAAS_CONFIG, allConfig.getProperty("jaasmodule")+" required username=\""+allConfig.getProperty("jaasuser")+"\" password=\""+allConfig.getProperty("jaaspwd")+"\";");
             
             inputTopic=allConfig.getProperty("inputtopic");
@@ -155,13 +155,29 @@ public class KStreamApp {
    	 exceptionTopic = "exceptiontopic";
    	compactedTopic = "compactedTopic";
         }
-        final StreamsBuilder builder = new StreamsBuilder();
-       
+	        
+	       /* final JsonSerializer jsonNodeSerializer = new JsonSerializer();
+	        final Deserializer<JsonNode> jsonNodeDeserializer = new JsonDeserializer();
+	        final Serde<JsonNode> jsonNodeSerde = Serdes.serdeFrom(jsonNodeSerializer,jsonNodeDeserializer);*/
+      
+	        
+	        final StreamsBuilder builder = new StreamsBuilder();
+        
+      /*  builder.stream(inputTopic).flatMap((ValueMapper<JsonNode,Iterab>))
+
+        
+        flatMap((ValueMapper<JsonNode, Iterable<JsonNode>>) value -> {
+            ArrayNode arrayNode = (ArrayNode) value.get("WHS");
+            return arrayNode::iterator;
+        });*/
         //KStream<String, Customer> source = builder.stream(inputTopic,Consumed.with(Serdes.String(), customerSerde));  // raw topic  topic /key / value
         //KTable<String, InputCustomer> tble = builder.table(compactedTopic, Consumed.with(Serdes.String(), inputCustomerSerde)); // compacted topic
-        KStream<String, Party> source = builder.stream(inputTopic,Consumed.with(Serdes.String(), partySerde));  // raw topic  topic /key / value
+       
+	        KStream<String, Party> source = builder.stream(inputTopic,Consumed.with(Serdes.String(), partySerde));  // raw topic  topic /key / value
         KTable<String, Address> tble = builder.table(compactedTopic, Consumed.with(Serdes.String(), addressSerde)); // compacted topic
-      
+        
+		/*KStream<String, Party> source = (KStream<String, Party>) builder.stream(inputTopic,Consumed.with(Serdes.String(), partySerde))
+        		.groupByKey().windowedBy(Duration.ofSeconds(30));*/
         
         logger.debug("Building Kstream and Ktable");
         @SuppressWarnings("unchecked") // can we check type of datatype for al fields?
@@ -257,13 +273,13 @@ logger.debug(branch.length +" branch entries ");
 	        
 	        if(!allConfig.isEmpty()) {
 	        	logger.debug("Setting producer properties from prop file");
-	        	if(allConfig.getProperty("app")!=null && !allConfig.getProperty("app").isBlank())
+	        	if(allConfig.getProperty("app")!=null && !allConfig.getProperty("app").isEmpty())
 	        	properties.put(StreamsConfig.APPLICATION_ID_CONFIG, allConfig.getProperty("app")+"producer");
 	        	
-	        	if(allConfig.getProperty("bootstrap")!=null && !allConfig.getProperty("bootstrap").isBlank())
+	        	if(allConfig.getProperty("bootstrap")!=null && !allConfig.getProperty("bootstrap").isEmpty())
 	        	properties.put(StreamsConfig.BOOTSTRAP_SERVERS_CONFIG, allConfig.getProperty("bootstrap")); // confluent Bootstrap Servers
 	        	
-	        	if(allConfig.getProperty("schemaregistry")!=null && !allConfig.getProperty("schemaregistry").isBlank()) {
+	        	if(allConfig.getProperty("schemaregistry")!=null && !allConfig.getProperty("schemaregistry").isEmpty()) {
 	        		properties.put("schema.registry.url", allConfig.getProperty("schemaregistry"));// Schema Registry URL
 	        		
 	        		Map<String, String> serdeConfig=Collections.singletonMap(AbstractKafkaAvroSerDeConfig.SCHEMA_REGISTRY_URL_CONFIG, allConfig.getProperty("schemaregistry"));
@@ -272,26 +288,26 @@ logger.debug(branch.length +" branch entries ");
 	        	}
 	        	
 	        	
-	        	if(allConfig.getProperty("mechanism")!=null && !allConfig.getProperty("mechanism").isBlank())
+	        	if(allConfig.getProperty("mechanism")!=null && !allConfig.getProperty("mechanism").isEmpty())
 	        	properties.put(SaslConfigs.SASL_MECHANISM, allConfig.getProperty("mechanism"));
 	        	
-	        	if(allConfig.getProperty("protocol")!=null && !allConfig.getProperty("protocol").isBlank())
+	        	if(allConfig.getProperty("protocol")!=null && !allConfig.getProperty("protocol").isEmpty())
 	        	properties.put(StreamsConfig.SECURITY_PROTOCOL_CONFIG,allConfig.getProperty("protocol"));
 	        	
 
-	            if(allConfig.getProperty("jaasmodule")!=null &&!allConfig.getProperty("jaasmodule").isBlank() &&
-	            		allConfig.getProperty("jaasuser")!=null && !allConfig.getProperty("jaasuser").isBlank() &&
-	            		allConfig.getProperty("jaaspwd")!=null && !allConfig.getProperty("jaaspwd").isBlank())
+	            if(allConfig.getProperty("jaasmodule")!=null &&!allConfig.getProperty("jaasmodule").isEmpty() &&
+	            		allConfig.getProperty("jaasuser")!=null && !allConfig.getProperty("jaasuser").isEmpty() &&
+	            		allConfig.getProperty("jaaspwd")!=null && !allConfig.getProperty("jaaspwd").isEmpty())
 	            			properties.put(SaslConfigs.SASL_JAAS_CONFIG, allConfig.getProperty("jaasmodule")+" required username=\""+allConfig.getProperty("jaasuser")+"\" password=\""+allConfig.getProperty("jaaspwd")+"\";");
 	            
 	            otherprop.put("outputTopic", allConfig.getProperty("inputtopic"));
 	        	 
 	        	 
-	        	 if(allConfig.getProperty("key")!= null && !allConfig.getProperty("key").isBlank())
+	        	 if(allConfig.getProperty("key")!= null && !allConfig.getProperty("key").isEmpty())
 	        		 otherprop.put("key", allConfig.getProperty("key"));
 	        		 
 	        	 
-	        	 if(allConfig.getProperty("count")!= null && !allConfig.getProperty("count").isBlank())
+	        	 if(allConfig.getProperty("count")!= null && !allConfig.getProperty("count").isEmpty())
 	        		 messagesCount = Integer.valueOf(allConfig.getProperty("count"));
 
 	        }else {
@@ -332,6 +348,34 @@ logger.debug(branch.length +" branch entries ");
 	     
 	        allConfig.stringPropertyNames().parallelStream().filter(x->x.startsWith("data.raw")).forEach( y ->{
 	        	String value = allConfig.getProperty(y);
+	        	logger.debug("Building data and record for " + y);
+	        	String att [] = value.split(",");
+	        //	 Customer data = Customer.newBuilder().setId(Integer.valueOf(att[0])).setName(att[1]).setAge(Integer.valueOf(att[2])).setCity(att[3]).build();
+	        	Party data = Party.newBuilder().setPartyID(Integer.valueOf(att[0])).setFirstForename(att[1]).setSecondForename(att[2]).setSurname(att[3]).setFirstInitial(att[4]).setSecondInitial(att[5]).setThirdInitial(att[6]).setPartyIndicator(att[7]).setBirthDate(att[8]).build();
+	        	 String k = otherprop.get("key");
+	        	 String out = otherprop.get("outputTopic");
+	        	 if(null!=k) {
+	        		// setting the key
+	 	        	if(k.contains("name")) {
+	 	        		logger.debug("Key to be provided for valid raw is -> "+k);
+	 	        		producerRecord.add(new ProducerRecord<>(out,data.getFirstForename(), data));
+	 	        	}
+	 	        	else if(k.contains("id")) {
+	 	        		logger.debug("Key to be provided for valid RAW is -> "+k);
+	 	        		producerRecord.add(new ProducerRecord<>(out,String.valueOf(data.getPartyID()), data));
+	 	        	}else {
+	 	        		logger.debug("No key has been set for valid RAW as the value doesnt match name or id");
+	 	        		producerRecord.add(new ProducerRecord<>(out, data));
+	 	        	}
+	 	        }else {
+	 	        	logger.debug("No key set for valid RAW as key is null");
+	 	        	producerRecord.add(new ProducerRecord<>(out, data));
+	 	        }
+	        });
+	        
+	        allConfig.stringPropertyNames().parallelStream().filter(x->x.startsWith("json.raw")).forEach( y ->{
+	        	String value = allConfig.getProperty(y);
+	              
 	        	logger.debug("Building data and record for " + y);
 	        	String att [] = value.split(",");
 	        //	 Customer data = Customer.newBuilder().setId(Integer.valueOf(att[0])).setName(att[1]).setAge(Integer.valueOf(att[2])).setCity(att[3]).build();
@@ -425,13 +469,13 @@ logger.debug(branch.length +" branch entries ");
 	        
 	        if(!allConfig.isEmpty()) {
 	        	logger.debug("Setting producer properties from prop file");
-	        	if(allConfig.getProperty("app")!=null && !allConfig.getProperty("app").isBlank())
+	        	if(allConfig.getProperty("app")!=null && !allConfig.getProperty("app").isEmpty())
 	        	properties.put(StreamsConfig.APPLICATION_ID_CONFIG, allConfig.getProperty("app")+"compactedproducer");
 	        	
-	        	if(allConfig.getProperty("bootstrap")!=null && !allConfig.getProperty("bootstrap").isBlank())
+	        	if(allConfig.getProperty("bootstrap")!=null && !allConfig.getProperty("bootstrap").isEmpty())
 	        	properties.put(StreamsConfig.BOOTSTRAP_SERVERS_CONFIG, allConfig.getProperty("bootstrap")); // confluent Bootstrap Servers
 	        	
-	        	if(allConfig.getProperty("schemaregistry")!=null && !allConfig.getProperty("schemaregistry").isBlank()) {
+	        	if(allConfig.getProperty("schemaregistry")!=null && !allConfig.getProperty("schemaregistry").isEmpty()) {
 	        		properties.put("schema.registry.url", allConfig.getProperty("schemaregistry"));// Schema Registry URL
 	        		
 	        		Map<String, String> serdeConfig=Collections.singletonMap(AbstractKafkaAvroSerDeConfig.SCHEMA_REGISTRY_URL_CONFIG, allConfig.getProperty("schemaregistry"));
@@ -441,23 +485,23 @@ logger.debug(branch.length +" branch entries ");
 	        	}
 	        	
 	        	
-	        	if(allConfig.getProperty("mechanism")!=null && !allConfig.getProperty("mechanism").isBlank())
+	        	if(allConfig.getProperty("mechanism")!=null && !allConfig.getProperty("mechanism").isEmpty())
 	        	properties.put(SaslConfigs.SASL_MECHANISM, allConfig.getProperty("mechanism"));
 	        	
-	        	if(allConfig.getProperty("protocol")!=null && !allConfig.getProperty("protocol").isBlank())
+	        	if(allConfig.getProperty("protocol")!=null && !allConfig.getProperty("protocol").isEmpty())
 	        	properties.put(StreamsConfig.SECURITY_PROTOCOL_CONFIG,allConfig.getProperty("protocol"));
 	        	
 
-	            if(allConfig.getProperty("jaasmodule")!=null &&!allConfig.getProperty("jaasmodule").isBlank() &&
-	            		allConfig.getProperty("jaasuser")!=null && !allConfig.getProperty("jaasuser").isBlank() &&
-	            		allConfig.getProperty("jaaspwd")!=null && !allConfig.getProperty("jaaspwd").isBlank())
+	            if(allConfig.getProperty("jaasmodule")!=null &&!allConfig.getProperty("jaasmodule").isEmpty() &&
+	            		allConfig.getProperty("jaasuser")!=null && !allConfig.getProperty("jaasuser").isEmpty() &&
+	            		allConfig.getProperty("jaaspwd")!=null && !allConfig.getProperty("jaaspwd").isEmpty())
 	            			properties.put(SaslConfigs.SASL_JAAS_CONFIG, allConfig.getProperty("jaasmodule")+" required username=\""+allConfig.getProperty("jaasuser")+"\" password=\""+allConfig.getProperty("jaaspwd")+"\";");
 	            
 	            
 	            otherprop.put("compactedTopic", allConfig.getProperty("compactedTopic"));
 	        	 
 	        	 
-	        	 if(allConfig.getProperty("key")!= null && !allConfig.getProperty("key").isBlank())
+	        	 if(allConfig.getProperty("key")!= null && !allConfig.getProperty("key").isEmpty())
 	        		 otherprop.put("key", allConfig.getProperty("key"));
 	        	
 	        	 
