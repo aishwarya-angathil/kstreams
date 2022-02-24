@@ -1,0 +1,61 @@
+{
+ "type": "record",
+ "name": "Enriched2",
+ "namespace": "com.training",
+ "fields": [
+  {
+   "name": "partyID",
+   "type": {
+    "type": "int",
+    "logicalType": "INTEGER"
+   },
+   "default": 0
+  },
+  {
+"name":"columns",
+"type":
+{
+"type":"array",
+"items":
+{"type":"record",
+"name":"columns",
+"fields":
+[
+{
+"name":"name",
+"type":"string",
+"doc":"Type inferred from '\"PTY_ID\"'"
+},
+{
+"name":"dataType",
+"type":"string",
+"doc":"Type inferred from '\"int\"'"
+},
+{
+"name":"value",
+"type":"int",
+"doc":"Type inferred from '429010101'"
+}]}}},
+  {
+   "name": "addressCareOfName",
+   "type": {
+    "type": "string",
+    "logicalType": "VARCHAR",
+    "length": 60
+   },
+   "doc": "",
+   "default": ""
+  },
+  {
+   "name": "partyAddress",
+   "type": {
+    "type": "string",
+    "logicalType": "VARCHAR",
+    "length": 160
+   },
+   "doc": "",
+   "default": ""   
+  }
+  
+]
+} 
