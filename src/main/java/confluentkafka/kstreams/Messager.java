@@ -7,24 +7,28 @@ import java.util.Properties;
 import org.apache.kafka.clients.producer.KafkaProducer;
 import org.apache.kafka.clients.producer.ProducerRecord;
 import org.apache.kafka.common.errors.SerializationException;
+import org.apache.kafka.common.serialization.Serde;
 import org.apache.kafka.common.serialization.Serdes;
 import org.apache.log4j.Logger;
 
 import com.training.Address;
+import com.training.CompactedSchema; 
+import com.training.JsonSchema;
 import com.training.Party;
 
+import confluentUtils.PartyService;
 import io.confluent.kafka.streams.serdes.avro.SpecificAvroSerde;
 public class Messager implements Runnable{
-	private ArrayList<ProducerRecord<String,Party>> records;
-	private ArrayList<ProducerRecord<String,Address>> compactedrecords;
-	private SpecificAvroSerde<Party> partySerde;
-	private SpecificAvroSerde<Address> addressSerde;
+	private ArrayList<ProducerRecord<String,JsonSchema>> records;
+	private ArrayList<ProducerRecord<String,String>> compactedrecords;
+	private SpecificAvroSerde<JsonSchema> partySerde;
+	private Serde<String> addressSerde;
 	private Properties properties;
 	private String topic;
 	private int count ;
 	static Logger logger = Logger.getLogger(Messager.class);
 
-	public Messager(String topic ,ArrayList<ProducerRecord<String,Party>> records,ArrayList<ProducerRecord<String,Address>> compactedrecords, Properties properties,SpecificAvroSerde<Party> partySerde,SpecificAvroSerde<Address> addressSerde,int count ) {
+	public Messager(String topic ,ArrayList<ProducerRecord<String,JsonSchema>> records,ArrayList<ProducerRecord<String,String>> compactedrecords, Properties properties,SpecificAvroSerde<JsonSchema> partySerde,Serde<String> addressSerde,int count ) {
 		super();
 		this.records = records;
 		this.compactedrecords=compactedrecords;
@@ -52,7 +56,7 @@ public class Messager implements Runnable{
 			
 			
 			
-			KafkaProducer<String,Party> producer = new KafkaProducer<>(this.properties, Serdes.String().serializer(), this.partySerde.serializer());//raw topic
+			KafkaProducer<String,JsonSchema> producer = new KafkaProducer<>(this.properties, Serdes.String().serializer(), this.partySerde.serializer());//raw topic
 			
 			try {
 		int i = 0;
@@ -97,7 +101,7 @@ public class Messager implements Runnable{
 		
 		if(this.addressSerde!=null && this.compactedrecords!=null) {
 			
-			  KafkaProducer<String,Address> compactedProducer = new KafkaProducer<>(properties, Serdes.String().serializer(), addressSerde.serializer()); //compacted topic
+			  KafkaProducer<String,String> compactedProducer = new KafkaProducer<>(properties, Serdes.String().serializer(), Serdes.String().serializer() ); //compacted topic
 			
 			  
 			  try {
