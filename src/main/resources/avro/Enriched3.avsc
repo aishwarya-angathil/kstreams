@@ -1,0 +1,37 @@
+{
+ "type": "record",
+ "name": "Enriched3",
+ "namespace": "com.training",
+ "fields": [
+  {
+   "name": "partyID",
+   "type": {
+    "type": "int",
+    "logicalType": "INTEGER"
+   },
+   "default": 0
+  },
+ {
+   "name": "externalPartyId",
+          "type": {
+   "type": "string",
+   "logicalType": "VARCHAR"    
+   },
+   "doc": "",
+   "default": ""
+  },
+      {
+        "name": "externalSystemId",
+        "type": "int"
+      },
+      {
+       "name": "createTimestamp",
+      "type": {
+      "type": "string",
+      "logicalType": "date"
+},
+     "doc": "",
+     "default": ""
+  }
+]
+}

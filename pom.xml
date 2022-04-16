@@ -62,7 +62,11 @@
 	            </exclusion>
             </exclusions>
         </dependency>
-        
+<dependency>
+   <groupId>org.codehaus.jettison</groupId>
+   <artifactId>jettison</artifactId>
+   <version>1.1</version>
+ </dependency> 
         <!-- https://mvnrepository.com/artifact/org.springframework/spring-core -->
 <dependency>
     <groupId>org.springframework</groupId>

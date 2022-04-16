@@ -1,0 +1,36 @@
+{ 
+    "name": "External",
+    "type": "array",    
+"items": {
+ "name": "ExternalIdentifiers",
+"type": "record",
+"namespace": "com.training",
+    "fields": [
+      {
+        "name": "externalPartyId",
+          "type": {
+    "type": "string",
+    "logicalType": "VARCHAR"    
+   },
+   "doc": "",
+   "default": ""
+  },
+      {
+        "name": "externalSystemId",
+        "type": "int"
+      },
+      {
+        "name": "createTimestamp",
+      "type": {
+      "type": "string",
+      "logicalType": "date"
+},
+     "doc": "",
+     "default": ""
+  }
+      
+      
+    ]
+}
+  }
+
