@@ -1,0 +1,51 @@
+{
+
+ "type": "record",
+
+ "name": "JsonSchema",
+
+ "namespace": "com.training",
+
+ "fields": [
+
+  {
+
+   "name": "partyID",
+
+   "type": {
+
+    "type": "int",
+
+    "logicalType": "INTEGER",
+
+    "dbColumnName": "PTY_ID"
+
+   },
+
+   "doc": "",
+
+   "default": 0
+
+  }, {
+
+   "name": "GND_CD",
+
+   "type": {
+
+    "type": "string",
+
+    "logicalType": "CHARACTER",
+
+    "dbColumnName": "GND_CD",
+
+    "length": 3
+
+   },
+
+   "doc": "",
+
+   "default": ""
+
+  }
+  ]
+  }

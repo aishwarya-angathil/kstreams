@@ -1,0 +1,130 @@
+{
+ "type": "record",
+ "name": "Enriched2",
+ "namespace": "com.training",
+ "fields": [
+
+  {
+   "name": "partyID",
+   "type": {
+    "type": "int",
+    "logicalType": "INTEGER"
+   },
+   "doc": "",
+   "default": 0
+  },
+  {
+      "name": "title",
+      "type": {
+      "type": "string",
+      "logicalType": "CHARACTER",
+      "length": 4
+    },
+   "doc": "",
+   "default": ""
+  },
+    {
+      "name": "forenames",
+      "type": {
+        "type": "array",
+        "items": "string"
+      }
+    },
+    {
+      "name": "initials",
+      "type": {
+        "type": "array",
+        "items": "string"
+      }
+    },
+    {
+      "name": "lastname",
+       "type": {
+      "type": "string",
+      "logicalType": "CHARACTER",
+      "length": 80
+    },
+   "doc": "",
+   "default": ""
+  },
+    {
+      "name": "generationSuffix",
+      "type": {
+      "type": "string",
+      "logicalType": "CHARACTER"      
+    },
+   "doc": "",
+   "default": ""
+  },
+    {
+      "name": "suffixTitle",
+      "type": {
+      "type": "string",
+      "logicalType": "CHARACTER"      
+    },
+   "doc": "",
+   "default": ""
+  },
+    {
+      "name": "salutation",
+      "type": {
+      "type": "string",
+      "logicalType": "CHARACTER",
+      "length": 60
+    },
+   "doc": "",
+   "default": ""
+  },
+    {
+      "name": "gender",
+      "type": {
+      "type": "string",
+      "logicalType": "CHARACTER"      
+    },
+   "doc": "",
+   "default": ""
+  },
+     {
+   "name": "birth_date",
+   "type": {
+    "type": "string",
+    "logicalType": "DATE",
+    "length": 8
+   },
+   "doc": "",
+   "default": ""
+  },
+    {
+      "name": "maritalStatus",
+      "type": {
+      "type": "string",
+      "logicalType": "CHARACTER"      
+    },
+   "doc": "",
+   "default": ""
+  },
+     {
+   "name": "deathDate",
+   "type": {
+    "type": "string",
+    "logicalType": "DATE",
+    "length": 10
+   },
+   "doc": "",
+   "default": ""
+  },
+     {
+   "name": "deathNotificationDate",
+   "type": {
+    "type": "string",
+    "logicalType": "DATE",
+    "length": 10
+   },
+   "doc": "",
+   "default": ""
+  }
+
+ 
+  
+]
+} 
